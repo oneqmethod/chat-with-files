@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   Conversation,
@@ -54,6 +54,7 @@ type ReasoningPart = {
 
 export default function ChatPage() {
   const params = useParams()
+  const router = useRouter()
   const chatId = params.id as string
   const isNewChat = chatId === 'new'
   const [inputValue, setInputValue] = useState('')
@@ -69,6 +70,14 @@ export default function ChatPage() {
 
   const { messages, status, sendMessage, setMessages } = useChat({
     transport,
+    onData: (dataPart) => {
+      if (dataPart.type === 'data-chat-id' && isNewChat) {
+        const chatIdData = dataPart.data as { chatId: string }
+        if (chatIdData?.chatId) {
+          router.replace(`/chat/${chatIdData.chatId}`)
+        }
+      }
+    },
   })
 
   useEffect(() => {

@@ -7,7 +7,14 @@ import { createGoogleGenerativeAI, type GoogleGenerativeAIProviderOptions } from
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GEMINI_API_KEY,
 })
-import { streamText, generateText, convertToModelMessages, type UIMessage } from 'ai'
+import {
+  streamText,
+  generateText,
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type UIMessage,
+} from 'ai'
 
 export async function POST(request: NextRequest) {
   const payload = await getPayload({ config })
@@ -112,9 +119,26 @@ When you find information, cite your sources.`,
     },
   })
 
-  return result.toUIMessageStreamResponse({
-    sendSources: true,
-    sendReasoning: true,
-    headers: { 'X-Chat-Id': currentChatId },
+  // Use createUIMessageStream to send chat ID as data part before AI response
+  const stream = createUIMessageStream({
+    execute: async ({ writer }) => {
+      // Send chat ID as data part (only for new chats)
+      if (!chatId) {
+        writer.write({
+          type: 'data-chat-id',
+          id: 'chat-id-data',
+          data: { chatId: currentChatId },
+        })
+      }
+      // Merge the AI response stream
+      writer.merge(
+        result.toUIMessageStream({
+          sendSources: true,
+          sendReasoning: true,
+        }),
+      )
+    },
   })
+
+  return createUIMessageStreamResponse({ stream })
 }
