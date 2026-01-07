@@ -69,6 +69,9 @@ export interface Config {
   collections: {
     users: User
     media: Media
+    files: File
+    chats: Chat
+    messages: Message
     'payload-kv': PayloadKv
     'payload-locked-documents': PayloadLockedDocument
     'payload-preferences': PayloadPreference
@@ -78,6 +81,9 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>
     media: MediaSelect<false> | MediaSelect<true>
+    files: FilesSelect<false> | FilesSelect<true>
+    chats: ChatsSelect<false> | ChatsSelect<true>
+    messages: MessagesSelect<false> | MessagesSelect<true>
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>
     'payload-locked-documents':
       | PayloadLockedDocumentsSelect<false>
@@ -124,6 +130,8 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string
+  displayName?: string | null
+  fileSearchStoreId?: string | null
   updatedAt: string
   createdAt: string
   email: string
@@ -163,6 +171,51 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "files".
+ */
+export interface File {
+  id: string
+  user: string | User
+  filename: string
+  mimeType: string
+  filesize: number
+  geminiDocumentId?: string | null
+  status: 'pending' | 'indexing' | 'ready' | 'error'
+  updatedAt: string
+  createdAt: string
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats".
+ */
+export interface Chat {
+  id: string
+  user: string | User
+  title: string
+  updatedAt: string
+  createdAt: string
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages".
+ */
+export interface Message {
+  id: string
+  chat: string | Chat
+  role: 'user' | 'assistant'
+  content: string
+  sources?:
+    | {
+        filename: string
+        snippet?: string | null
+        id?: string | null
+      }[]
+    | null
+  updatedAt: string
+  createdAt: string
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -192,6 +245,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media'
         value: string | Media
+      } | null)
+    | ({
+        relationTo: 'files'
+        value: string | File
+      } | null)
+    | ({
+        relationTo: 'chats'
+        value: string | Chat
+      } | null)
+    | ({
+        relationTo: 'messages'
+        value: string | Message
       } | null)
   globalSlug?: string | null
   user: {
@@ -240,6 +305,8 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  displayName?: T
+  fileSearchStoreId?: T
   updatedAt?: T
   createdAt?: T
   email?: T
@@ -274,6 +341,48 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T
   focalX?: T
   focalY?: T
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "files_select".
+ */
+export interface FilesSelect<T extends boolean = true> {
+  user?: T
+  filename?: T
+  mimeType?: T
+  filesize?: T
+  geminiDocumentId?: T
+  status?: T
+  updatedAt?: T
+  createdAt?: T
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats_select".
+ */
+export interface ChatsSelect<T extends boolean = true> {
+  user?: T
+  title?: T
+  updatedAt?: T
+  createdAt?: T
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages_select".
+ */
+export interface MessagesSelect<T extends boolean = true> {
+  chat?: T
+  role?: T
+  content?: T
+  sources?:
+    | T
+    | {
+        filename?: T
+        snippet?: T
+        id?: T
+      }
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

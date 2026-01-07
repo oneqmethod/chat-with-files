@@ -1,4 +1,23 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, CollectionAfterChangeHook } from 'payload'
+import { createFileSearchStore } from '@/lib/gemini'
+
+const createUserFileStore: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
+  if (operation !== 'create') return doc
+  if (doc.fileSearchStoreId) return doc
+
+  try {
+    const storeId = await createFileSearchStore(`user-${doc.id}`)
+    await req.payload.update({
+      collection: 'users',
+      id: doc.id,
+      data: { fileSearchStoreId: storeId },
+    })
+    return { ...doc, fileSearchStoreId: storeId }
+  } catch (error) {
+    req.payload.logger.error(`Failed to create file search store for user ${doc.id}: ${error}`)
+    return doc
+  }
+}
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -7,7 +26,19 @@ export const Users: CollectionConfig = {
   },
   auth: true,
   fields: [
-    // Email added by default
-    // Add more fields as needed
+    {
+      name: 'displayName',
+      type: 'text',
+    },
+    {
+      name: 'fileSearchStoreId',
+      type: 'text',
+      admin: {
+        readOnly: true,
+      },
+    },
   ],
+  hooks: {
+    afterChange: [createUserFileStore],
+  },
 }
