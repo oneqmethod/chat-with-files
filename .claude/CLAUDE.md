@@ -44,6 +44,19 @@ Use skills for up-to-date docs:
 - `pnpm dlx shadcn@latest search <query>` - Search registries
 - `pnpm dlx shadcn@latest view <component>` - View before install
 
+## Workflow
+
+**ALWAYS follow this workflow for any implementation request:**
+
+1. **Plan First** - Even outside plan mode, create a plan before building
+2. **Create bd Issues** - Convert plan steps to bd issues (`bd create`)
+3. **Claim Work** - `bd update <id> --status in_progress`
+4. **Build** - Implement the issue
+5. **Close** - `bd close <id>` when done
+6. **Repeat** - Next issue until all complete
+
+**NEVER build without bd issues.** All work must be tracked.
+
 ## Rules
 
 @.claude/rules/code-style.md
