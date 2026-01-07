@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Plus, MessageSquare, LogOut, User as UserIcon } from 'lucide-react'
+import { Plus, LogOut, User as UserIcon, Files, MoreHorizontal, Trash2 } from 'lucide-react'
+import { deleteChat } from '@/app/(frontend)/(app)/actions'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -22,6 +24,12 @@ interface ChatsSidebarProps {
 export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+
+  async function handleDeleteChat(chatId: string) {
+    await deleteChat(chatId)
+    router.refresh()
+  }
 
   async function handleLogout() {
     await fetch('/api/users/logout', {
@@ -40,24 +48,59 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
     <div className="flex h-full w-64 flex-col border-r bg-muted/30">
       <div className="flex items-center justify-between p-4">
         <h1 className="text-lg font-semibold">Chats</h1>
-        <Button variant="ghost" size="icon" onClick={handleNewChat}>
-          <Plus className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/files">
+              <Files className="h-5 w-5" />
+            </Link>
+          </Button>
+          <Button variant="ghost" size="icon" onClick={handleNewChat}>
+            <Plus className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       <ScrollArea className="flex-1 px-2">
         <div className="space-y-1">
           {chats.map((chat) => (
-            <Link
+            <div
               key={chat.id}
-              href={`/chat/${chat.id}`}
-              className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted ${
+              className={`group relative flex items-center rounded-md transition-colors hover:bg-muted ${
                 pathname === `/chat/${chat.id}` ? 'bg-muted' : ''
               }`}
             >
-              <MessageSquare className="h-4 w-4 shrink-0" />
-              <span className="truncate">{chat.title}</span>
-            </Link>
+              <Link
+                href={`/chat/${chat.id}`}
+                className="flex-1 truncate px-2 py-2 text-sm"
+              >
+                {chat.title}
+              </Link>
+              <DropdownMenu
+                open={openDropdown === chat.id}
+                onOpenChange={(open) => setOpenDropdown(open ? chat.id : null)}
+              >
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`absolute right-1 h-7 w-7 rounded-md bg-stone-800 transition-opacity hover:bg-stone-700 group-hover:opacity-100 ${
+                      openDropdown === chat.id ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-32">
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => handleDeleteChat(chat.id)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ))}
           {chats.length === 0 && (
             <p className="px-3 py-2 text-sm text-muted-foreground">No chats yet</p>

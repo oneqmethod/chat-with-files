@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { ChatsSidebar } from '@/components/chats-sidebar'
-import { FilesSidebar } from '@/components/files-sidebar'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const payload = await getPayload({ config })
@@ -24,7 +23,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen">
       <ChatsSidebar user={user} chats={chats.docs} />
       <main className="flex-1 overflow-auto">{children}</main>
-      <FilesSidebar userId={user.id} />
     </div>
   )
 }
