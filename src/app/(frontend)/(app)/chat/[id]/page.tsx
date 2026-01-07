@@ -55,17 +55,21 @@ type ReasoningPart = {
 export default function ChatPage() {
   const params = useParams()
   const router = useRouter()
-  const chatId = params.id as string
-  const isNewChat = chatId === 'new'
+  const paramChatId = params.id as string
   const [inputValue, setInputValue] = useState('')
+  // Track actual chat ID (starts as param, updates when new chat is created)
+  const [actualChatId, setActualChatId] = useState<string | null>(
+    paramChatId === 'new' ? null : paramChatId,
+  )
+  const isNewChat = actualChatId === null
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: '/api/chat',
-        body: { chatId: isNewChat ? undefined : chatId },
+        body: { chatId: actualChatId || undefined },
       }),
-    [chatId, isNewChat],
+    [actualChatId],
   )
 
   const { messages, status, sendMessage, setMessages } = useChat({
@@ -74,15 +78,21 @@ export default function ChatPage() {
       if (dataPart.type === 'data-chat-id' && isNewChat) {
         const chatIdData = dataPart.data as { chatId: string }
         if (chatIdData?.chatId) {
-          router.replace(`/chat/${chatIdData.chatId}`)
+          // Update URL without remounting component (preserves stream)
+          window.history.replaceState(null, '', `/chat/${chatIdData.chatId}`)
+          setActualChatId(chatIdData.chatId)
         }
       }
+    },
+    onFinish: () => {
+      // Refresh RSC to update sidebar after stream completes
+      router.refresh()
     },
   })
 
   useEffect(() => {
-    if (!isNewChat) {
-      fetch(`/api/messages?where[chat][equals]=${chatId}&sort=createdAt`)
+    if (!isNewChat && actualChatId) {
+      fetch(`/api/messages?where[chat][equals]=${actualChatId}&sort=createdAt`)
         .then((res) => res.json())
         .then((data) => {
           if (data.docs) {
@@ -134,7 +144,7 @@ export default function ChatPage() {
         })
         .catch(console.error)
     }
-  }, [chatId, isNewChat, setMessages])
+  }, [actualChatId, isNewChat, setMessages])
 
   const handleSubmit = useCallback(
     (message: PromptInputMessage) => {
