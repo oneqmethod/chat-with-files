@@ -8,6 +8,9 @@
     "SessionStart": [
       {
         "hooks": [{ "type": "command", "command": "codemap hook session-start" }]
+      },
+      {
+        "hooks": [{ "type": "command", "command": "bd prime" }]
       }
     ],
     "PreToolUse": [
@@ -33,6 +36,9 @@
     "PreCompact": [
       {
         "hooks": [{ "type": "command", "command": "codemap hook pre-compact" }]
+      },
+      {
+        "hooks": [{ "type": "command", "command": "bd prime" }]
       }
     ],
     "SessionEnd": [

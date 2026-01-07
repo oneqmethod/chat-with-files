@@ -51,3 +51,4 @@ Use skills for up-to-date docs:
 @.claude/rules/shadcn.md
 @.claude/rules/nextjs.md
 @.claude/rules/testing.md
+@.claude/rules/bd.md
