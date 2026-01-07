@@ -69,10 +69,7 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
                 pathname === `/chat/${chat.id}` ? 'bg-muted' : ''
               }`}
             >
-              <Link
-                href={`/chat/${chat.id}`}
-                className="flex-1 truncate px-2 py-2 text-sm"
-              >
+              <Link href={`/chat/${chat.id}`} className="flex-1 truncate px-2 py-2 text-sm">
                 {chat.title}
               </Link>
               <DropdownMenu
