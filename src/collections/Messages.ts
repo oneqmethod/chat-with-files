@@ -45,9 +45,21 @@ export const Messages: CollectionConfig = {
       type: 'array',
       fields: [
         {
-          name: 'filename',
-          type: 'text',
+          name: 'sourceType',
+          type: 'select',
           required: true,
+          options: [
+            { label: 'URL', value: 'url' },
+            { label: 'Document', value: 'document' },
+          ],
+        },
+        {
+          name: 'url',
+          type: 'text',
+        },
+        {
+          name: 'title',
+          type: 'text',
         },
         {
           name: 'snippet',

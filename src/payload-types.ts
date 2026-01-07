@@ -206,7 +206,9 @@ export interface Message {
   content: string
   sources?:
     | {
-        filename: string
+        sourceType: 'url' | 'document'
+        url?: string | null
+        title?: string | null
         snippet?: string | null
         id?: string | null
       }[]
@@ -377,7 +379,9 @@ export interface MessagesSelect<T extends boolean = true> {
   sources?:
     | T
     | {
-        filename?: T
+        sourceType?: T
+        url?: T
+        title?: T
         snippet?: T
         id?: T
       }

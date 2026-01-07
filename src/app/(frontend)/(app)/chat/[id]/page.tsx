@@ -10,15 +10,35 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation'
-import { Message, MessageContent } from '@/components/ai-elements/message'
+import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message'
 import {
   PromptInput,
   PromptInputTextarea,
   PromptInputButton,
 } from '@/components/ai-elements/prompt-input'
+import {
+  InlineCitation,
+  InlineCitationCard,
+  InlineCitationCardTrigger,
+  InlineCitationCardBody,
+  InlineCitationSource,
+} from '@/components/ai-elements/inline-citation'
+import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Loader } from '@/components/ai-elements/loader'
 import { MessageSquare, Send } from 'lucide-react'
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
+
+type SourceUrlPart = {
+  type: 'source-url'
+  sourceId: string
+  url: string
+  title?: string
+}
+
+type ReasoningPart = {
+  type: 'reasoning'
+  text: string
+}
 
 export default function ChatPage() {
   const params = useParams()
@@ -45,13 +65,41 @@ export default function ChatPage() {
         .then((res) => res.json())
         .then((data) => {
           if (data.docs) {
-            const loadedMessages = data.docs.map(
-              (msg: { id: string; role: string; content: string }) => ({
+            type DbMessage = {
+              id: string
+              role: string
+              content: string
+              sources?: Array<{
+                sourceType: 'url' | 'document'
+                url?: string
+                title?: string
+              }>
+            }
+            const loadedMessages = data.docs.map((msg: DbMessage) => {
+              const parts: Array<
+                | { type: 'text'; text: string }
+                | { type: 'source-url'; sourceId: string; url: string; title?: string }
+              > = [{ type: 'text' as const, text: msg.content }]
+
+              if (msg.sources?.length) {
+                for (const source of msg.sources) {
+                  if (source.sourceType === 'url' && source.url) {
+                    parts.push({
+                      type: 'source-url' as const,
+                      sourceId: `${msg.id}-${source.url}`,
+                      url: source.url,
+                      title: source.title,
+                    })
+                  }
+                }
+              }
+
+              return {
                 id: msg.id,
                 role: msg.role as 'user' | 'assistant',
-                parts: [{ type: 'text' as const, text: msg.content }],
-              }),
-            )
+                parts,
+              }
+            })
             setMessages(loadedMessages)
           }
         })
@@ -69,15 +117,6 @@ export default function ChatPage() {
     [sendMessage],
   )
 
-  function getMessageContent(message: (typeof messages)[0]): string {
-    return (
-      message.parts
-        ?.filter((part): part is { type: 'text'; text: string } => part.type === 'text')
-        .map((part) => part.text)
-        .join('') || ''
-    )
-  }
-
   const isLoading = status === 'streaming' || status === 'submitted'
 
   return (
@@ -91,22 +130,70 @@ export default function ChatPage() {
               icon={<MessageSquare className="h-12 w-12" />}
             />
           ) : (
-            messages.map((message) => (
-              <Message key={message.id} from={message.role}>
-                <MessageContent>
-                  {message.role === 'assistant' &&
-                  isLoading &&
-                  message.id === messages[messages.length - 1]?.id &&
-                  !getMessageContent(message) ? (
+            <>
+              {messages.map((message) => {
+                const sources = message.parts?.filter(
+                  (p): p is SourceUrlPart => p.type === 'source-url',
+                )
+                return (
+                  <Message key={message.id} from={message.role}>
+                    <MessageContent>
+                      {message.parts?.map((part, i) => {
+                        const isLastMessage = message.id === messages[messages.length - 1]?.id
+                        const isStreamingThis = isLoading && isLastMessage
+
+                        if (part.type === 'reasoning') {
+                          const reasoningPart = part as ReasoningPart
+                          return (
+                            <Reasoning
+                              key={i}
+                              className="w-full"
+                              isStreaming={isStreamingThis && i === message.parts!.length - 1}
+                            >
+                              <ReasoningTrigger />
+                              <ReasoningContent>{reasoningPart.text}</ReasoningContent>
+                            </Reasoning>
+                          )
+                        }
+
+                        if (part.type === 'text') {
+                          return part.text || isStreamingThis ? (
+                            <MessageResponse key={i}>{part.text}</MessageResponse>
+                          ) : (
+                            <Loader key={i} />
+                          )
+                        }
+
+                        return null
+                      })}
+                      {sources && sources.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1">
+                          {sources.map((source, i) => (
+                            <InlineCitation key={source.sourceId || i}>
+                              <InlineCitationCard>
+                                <InlineCitationCardTrigger sources={[source.url]} />
+                                <InlineCitationCardBody>
+                                  <div className="p-3">
+                                    <InlineCitationSource title={source.title} url={source.url} />
+                                  </div>
+                                </InlineCitationCardBody>
+                              </InlineCitationCard>
+                            </InlineCitation>
+                          ))}
+                        </div>
+                      )}
+                    </MessageContent>
+                  </Message>
+                )
+              })}
+              {status === 'submitted' && (
+                <Message from="assistant">
+                  <MessageContent>
                     <Loader />
-                  ) : (
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
-                      {getMessageContent(message)}
-                    </div>
-                  )}
-                </MessageContent>
-              </Message>
-            ))
+                  </MessageContent>
+                </Message>
+              )}
+            </>
           )}
         </ConversationContent>
         <ConversationScrollButton />
