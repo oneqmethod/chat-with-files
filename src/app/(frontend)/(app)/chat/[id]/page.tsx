@@ -23,6 +23,8 @@ import {
   InlineCitationCardBody,
   InlineCitationSource,
 } from '@/components/ai-elements/inline-citation'
+import { HoverCardTrigger } from '@/components/ui/hover-card'
+import { Badge } from '@/components/ui/badge'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Loader } from '@/components/ai-elements/loader'
 import { MessageSquare, Send } from 'lucide-react'
@@ -34,6 +36,16 @@ type SourceUrlPart = {
   url: string
   title?: string
 }
+
+type SourceDocumentPart = {
+  type: 'source-document'
+  sourceId: string
+  mediaType: string
+  title: string
+  filename?: string
+}
+
+type SourcePart = SourceUrlPart | SourceDocumentPart
 
 type ReasoningPart = {
   type: 'reasoning'
@@ -73,12 +85,12 @@ export default function ChatPage() {
                 sourceType: 'url' | 'document'
                 url?: string
                 title?: string
+                filename?: string
               }>
             }
             const loadedMessages = data.docs.map((msg: DbMessage) => {
               const parts: Array<
-                | { type: 'text'; text: string }
-                | { type: 'source-url'; sourceId: string; url: string; title?: string }
+                { type: 'text'; text: string } | SourceUrlPart | SourceDocumentPart
               > = [{ type: 'text' as const, text: msg.content }]
 
               if (msg.sources?.length) {
@@ -89,6 +101,14 @@ export default function ChatPage() {
                       sourceId: `${msg.id}-${source.url}`,
                       url: source.url,
                       title: source.title,
+                    })
+                  } else if (source.sourceType === 'document') {
+                    parts.push({
+                      type: 'source-document' as const,
+                      sourceId: `${msg.id}-${source.title || source.filename}`,
+                      mediaType: 'application/octet-stream',
+                      title: source.title || source.filename || 'Document',
+                      filename: source.filename,
                     })
                   }
                 }
@@ -133,7 +153,7 @@ export default function ChatPage() {
             <>
               {messages.map((message) => {
                 const sources = message.parts?.filter(
-                  (p): p is SourceUrlPart => p.type === 'source-url',
+                  (p): p is SourcePart => p.type === 'source-url' || p.type === 'source-document',
                 )
                 return (
                   <Message key={message.id} from={message.role}>
@@ -171,12 +191,35 @@ export default function ChatPage() {
                           {sources.map((source, i) => (
                             <InlineCitation key={source.sourceId || i}>
                               <InlineCitationCard>
-                                <InlineCitationCardTrigger sources={[source.url]} />
-                                <InlineCitationCardBody>
-                                  <div className="p-3">
-                                    <InlineCitationSource title={source.title} url={source.url} />
-                                  </div>
-                                </InlineCitationCardBody>
+                                {source.type === 'source-url' ? (
+                                  <>
+                                    <InlineCitationCardTrigger sources={[source.url]} />
+                                    <InlineCitationCardBody>
+                                      <div className="p-3">
+                                        <InlineCitationSource
+                                          title={source.title}
+                                          url={source.url}
+                                        />
+                                      </div>
+                                    </InlineCitationCardBody>
+                                  </>
+                                ) : (
+                                  <>
+                                    <HoverCardTrigger asChild>
+                                      <Badge className="ml-1 rounded-full" variant="secondary">
+                                        {source.filename || source.title}
+                                      </Badge>
+                                    </HoverCardTrigger>
+                                    <InlineCitationCardBody>
+                                      <div className="p-3">
+                                        <InlineCitationSource
+                                          title={source.title}
+                                          description={source.filename}
+                                        />
+                                      </div>
+                                    </InlineCitationCardBody>
+                                  </>
+                                )}
                               </InlineCitationCard>
                             </InlineCitation>
                           ))}

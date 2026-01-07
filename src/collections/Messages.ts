@@ -62,6 +62,10 @@ export const Messages: CollectionConfig = {
           type: 'text',
         },
         {
+          name: 'filename',
+          type: 'text',
+        },
+        {
           name: 'snippet',
           type: 'textarea',
         },

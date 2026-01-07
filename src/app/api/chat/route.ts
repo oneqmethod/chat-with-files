@@ -87,6 +87,7 @@ When you find information, cite your sources.`,
             sourceType: s.sourceType === 'url' ? 'url' : 'document',
             url: s.sourceType === 'url' ? s.url : undefined,
             title: 'title' in s ? String(s.title) : undefined,
+            filename: 'filename' in s ? String(s.filename) : undefined,
           })),
         },
       })
