@@ -44,10 +44,10 @@ export async function POST(request: NextRequest) {
   }
 
   // Extract text from last user message (UIMessage format has parts array)
-  const lastUserMessage = messages.findLast((m) => m.role === 'user')
+  const lastUserMessage = messages.findLast((m: UIMessage) => m.role === 'user')
   const lastUserText = lastUserMessage?.parts
-    ?.filter((p) => p.type === 'text')
-    .map((p) => (p as { type: 'text'; text: string }).text)
+    ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+    .map((p) => p.text)
     .join('\n')
 
   if (lastUserText) {
