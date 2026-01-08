@@ -34,6 +34,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import type { Chat, User } from '@/payload-types'
 
 interface ChatsSidebarProps {
@@ -50,9 +60,16 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [chatToDelete, setChatToDelete] = useState<Chat | null>(null)
 
-  async function handleDeleteChat(chatId: string) {
+  async function handleConfirmDelete() {
+    if (!chatToDelete) return
+    const chatId = chatToDelete.id
+    setChatToDelete(null)
     await deleteChat(chatId)
+    if (pathname === `/chat/${chatId}`) {
+      router.push('/dashboard')
+    }
     router.refresh()
   }
 
@@ -118,7 +135,7 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
                     <DropdownMenuContent align="end" className="w-32">
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
-                        onClick={() => handleDeleteChat(chat.id)}
+                        onClick={() => setChatToDelete(chat)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
@@ -166,6 +183,26 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
+      <AlertDialog open={!!chatToDelete} onOpenChange={(open) => !open && setChatToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &quot;{chatToDelete?.title}&quot; and all its messages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sidebar>
   )
 }
