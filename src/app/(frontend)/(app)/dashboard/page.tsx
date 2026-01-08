@@ -20,7 +20,7 @@ export default async function DashboardPage() {
       limit: 5,
     }),
     payload.find({
-      collection: 'files',
+      collection: 'media',
       where: { user: { equals: user.id } },
     }),
   ])

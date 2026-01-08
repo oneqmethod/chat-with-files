@@ -1,16 +1,86 @@
-import type { CollectionConfig } from 'payload'
+import type {
+  CollectionConfig,
+  CollectionAfterChangeHook,
+  CollectionBeforeDeleteHook,
+} from 'payload'
+import { deleteFromStore } from '@/lib/gemini'
+
+const queueGoogleUpload: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
+  if (operation !== 'create' || !doc.filename || !doc.user) return doc
+
+  await req.payload.jobs.queue({
+    task: 'uploadToGoogle',
+    input: {
+      mediaId: doc.id,
+      userId: typeof doc.user === 'string' ? doc.user : doc.user.id,
+    },
+  })
+  return doc
+}
+
+const deleteFromGoogle: CollectionBeforeDeleteHook = async ({ req, id }) => {
+  const doc = await req.payload.findByID({ collection: 'media', id })
+  if (doc?.geminiDocumentId) {
+    try {
+      await deleteFromStore(doc.geminiDocumentId)
+    } catch (e) {
+      req.payload.logger.error(`Failed to delete from Google: ${e}`)
+    }
+  }
+}
 
 export const Media: CollectionConfig = {
   slug: 'media',
+  upload: true,
   access: {
-    read: () => true,
+    read: ({ req }) => {
+      if (!req.user) return false
+      return { user: { equals: req.user.id } }
+    },
+    create: ({ req }) => !!req.user,
+    update: ({ req }) => {
+      if (!req.user) return false
+      return { user: { equals: req.user.id } }
+    },
+    delete: ({ req }) => {
+      if (!req.user) return false
+      return { user: { equals: req.user.id } }
+    },
   },
   fields: [
     {
       name: 'alt',
       type: 'text',
+    },
+    {
+      name: 'user',
+      type: 'relationship',
+      relationTo: 'users',
       required: true,
+      hasMany: false,
+    },
+    {
+      name: 'status',
+      type: 'select',
+      required: true,
+      defaultValue: 'pending',
+      options: [
+        { label: 'Pending', value: 'pending' },
+        { label: 'Indexing', value: 'indexing' },
+        { label: 'Ready', value: 'ready' },
+        { label: 'Error', value: 'error' },
+      ],
+    },
+    {
+      name: 'geminiDocumentId',
+      type: 'text',
+      admin: {
+        readOnly: true,
+      },
     },
   ],
-  upload: true,
+  hooks: {
+    afterChange: [queueGoogleUpload],
+    beforeDelete: [deleteFromGoogle],
+  },
 }

@@ -1,26 +1,49 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Upload, X, Check, Loader2, AlertCircle, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { FileUpload, FileUploadDropzone } from '@/components/ui/file-upload'
-import type { File as PayloadFile } from '@/payload-types'
+import type { Media } from '@/payload-types'
+
+type FileStatus = 'pending' | 'indexing' | 'ready' | 'error'
+
+interface FileItem {
+  id: string
+  filename: string | null
+  filesize: number | null
+  status: FileStatus
+  isOptimistic?: boolean
+}
 
 interface FilesPageProps {
   userId: string
 }
 
 export function FilesPage({ userId }: FilesPageProps) {
-  const [files, setFiles] = useState<PayloadFile[]>([])
+  const [files, setFiles] = useState<FileItem[]>([])
   const [loading, setLoading] = useState(true)
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchFiles = useCallback(async () => {
     try {
       const res = await fetch('/api/files?limit=100')
       if (res.ok) {
         const data = await res.json()
-        setFiles(data.docs || [])
+        const mediaFiles: FileItem[] = (data.docs || []).map((doc: Media) => ({
+          id: doc.id,
+          filename: doc.filename,
+          filesize: doc.filesize,
+          status: doc.status as FileStatus,
+        }))
+        setFiles((prev) => {
+          // Keep optimistic files that haven't been confirmed yet
+          const optimisticFiles = prev.filter(
+            (f) => f.isOptimistic && !mediaFiles.some((mf) => mf.id === f.id),
+          )
+          return [...optimisticFiles, ...mediaFiles]
+        })
       }
     } catch (error) {
       console.error('Failed to fetch files:', error)
@@ -32,6 +55,29 @@ export function FilesPage({ userId }: FilesPageProps) {
   useEffect(() => {
     fetchFiles()
   }, [fetchFiles])
+
+  // Poll for status updates when there are pending/indexing files
+  useEffect(() => {
+    const pendingFiles = files.filter((f) => ['pending', 'indexing'].includes(f.status))
+
+    if (pendingFiles.length > 0) {
+      if (!pollIntervalRef.current) {
+        pollIntervalRef.current = setInterval(fetchFiles, 3000)
+      }
+    } else {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+    }
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+    }
+  }, [files, fetchFiles])
 
   async function handleUpload(
     uploadFiles: File[],
@@ -46,6 +92,19 @@ export function FilesPage({ userId }: FilesPageProps) {
     },
   ) {
     for (const file of uploadFiles) {
+      // Add optimistic entry immediately
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      setFiles((prev) => [
+        {
+          id: tempId,
+          filename: file.name,
+          filesize: file.size,
+          status: 'pending',
+          isOptimistic: true,
+        },
+        ...prev,
+      ])
+
       try {
         onProgress(file, 10)
 
@@ -67,32 +126,54 @@ export function FilesPage({ userId }: FilesPageProps) {
           throw new Error(data.error || 'Upload failed')
         }
 
+        const data = await res.json()
+
+        // Replace optimistic entry with real one
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === tempId
+              ? {
+                  id: data.id,
+                  filename: data.filename,
+                  filesize: data.filesize,
+                  status: 'pending' as FileStatus,
+                  isOptimistic: false,
+                }
+              : f,
+          ),
+        )
+
         onProgress(file, 100)
         onSuccess(file)
-
-        fetchFiles()
       } catch (error) {
+        // Remove optimistic entry on error
+        setFiles((prev) => prev.filter((f) => f.id !== tempId))
         onError(file, error instanceof Error ? error : new Error('Upload failed'))
       }
     }
   }
 
   async function handleDelete(fileId: string) {
+    // Optimistic delete
+    setFiles((prev) => prev.filter((f) => f.id !== fileId))
+
     try {
       const res = await fetch(`/api/files/${fileId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
 
-      if (res.ok) {
-        setFiles((prev) => prev.filter((f) => f.id !== fileId))
+      if (!res.ok) {
+        // Restore on failure
+        fetchFiles()
       }
     } catch (error) {
       console.error('Failed to delete file:', error)
+      fetchFiles()
     }
   }
 
-  function getStatusIcon(status: PayloadFile['status']) {
+  function getStatusIcon(status: FileStatus) {
     switch (status) {
       case 'ready':
         return <Check className="h-4 w-4 text-green-500" />
@@ -149,8 +230,8 @@ export function FilesPage({ userId }: FilesPageProps) {
                   <FileText className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium" title={file.filename}>
-                    {file.filename}
+                  <p className="truncate font-medium" title={file.filename || 'Unknown'}>
+                    {file.filename || 'Unknown'}
                   </p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
@@ -170,6 +251,7 @@ export function FilesPage({ userId }: FilesPageProps) {
                   size="icon"
                   className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
                   onClick={() => handleDelete(file.id)}
+                  disabled={file.isOptimistic}
                 >
                   <X className="h-4 w-4" />
                 </Button>

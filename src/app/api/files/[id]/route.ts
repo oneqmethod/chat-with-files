@@ -2,7 +2,6 @@ import { headers } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { deleteFromStore } from '@/lib/gemini'
 
 export async function DELETE(
   request: NextRequest,
@@ -18,29 +17,23 @@ export async function DELETE(
   const { id } = await params
 
   try {
-    const file = await payload.findByID({
-      collection: 'files',
+    const media = await payload.findByID({
+      collection: 'media',
       id,
     })
 
-    if (!file) {
+    if (!media) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
-    if (typeof file.user === 'string' ? file.user !== user.id : file.user.id !== user.id) {
+    const mediaUserId = typeof media.user === 'string' ? media.user : media.user.id
+    if (mediaUserId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    if (file.geminiDocumentId) {
-      try {
-        await deleteFromStore(file.geminiDocumentId)
-      } catch (error) {
-        payload.logger.error(`Failed to delete from Gemini store: ${error}`)
-      }
-    }
-
+    // beforeDelete hook handles Google cleanup
     await payload.delete({
-      collection: 'files',
+      collection: 'media',
       id,
     })
 

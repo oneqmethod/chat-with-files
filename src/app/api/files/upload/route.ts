@@ -2,7 +2,6 @@ import { headers } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { uploadToStore } from '@/lib/gemini'
 
 export async function POST(request: NextRequest) {
   const payload = await getPayload({ config })
@@ -24,48 +23,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    const fileRecord = await payload.create({
-      collection: 'files',
+    const doc = await payload.create({
+      collection: 'media',
       data: {
         user: user.id,
-        filename: file.name,
-        mimeType: file.type,
-        filesize: file.size,
+        alt: file.name,
         status: 'pending',
+      },
+      file: {
+        data: Buffer.from(await file.arrayBuffer()),
+        name: file.name,
+        mimetype: file.type,
+        size: file.size,
       },
     })
 
-    try {
-      await payload.update({
-        collection: 'files',
-        id: fileRecord.id,
-        data: { status: 'indexing' },
-      })
-
-      const geminiDocumentId = await uploadToStore(user.fileSearchStoreId, file, file.name)
-
-      await payload.update({
-        collection: 'files',
-        id: fileRecord.id,
-        data: {
-          status: 'ready',
-          geminiDocumentId,
-        },
-      })
-
-      return NextResponse.json({
-        id: fileRecord.id,
-        filename: file.name,
-        status: 'ready',
-      })
-    } catch (uploadError) {
-      await payload.update({
-        collection: 'files',
-        id: fileRecord.id,
-        data: { status: 'error' },
-      })
-      throw uploadError
-    }
+    // Job queued by afterChange hook
+    return NextResponse.json({
+      id: doc.id,
+      filename: doc.filename,
+      filesize: doc.filesize,
+      mimeType: doc.mimeType,
+      status: 'pending',
+    })
   } catch (error) {
     payload.logger.error(`File upload error: ${error}`)
     return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 })
