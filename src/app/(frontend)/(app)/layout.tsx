@@ -24,10 +24,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <SidebarProvider>
       <ChatsSidebar user={user} chats={chats.docs} />
       <SidebarInset>
-        <header className="flex h-12 items-center border-b px-4">
+        <header className="sticky top-0 z-10 flex h-12 items-center border-b bg-background px-4">
           <SidebarTrigger />
         </header>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex min-h-0 flex-1 flex-col">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   )
