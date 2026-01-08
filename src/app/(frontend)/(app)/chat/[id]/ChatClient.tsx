@@ -85,18 +85,11 @@ export function ChatClient({ initialMessages, chatId }: ChatClientProps) {
         }
       }
     },
+    messages: initialMessages,
     onFinish: () => {
       router.refresh()
     },
   })
-
-  // Initialize with server-fetched messages on mount
-  useEffect(() => {
-    if (!initializedRef.current && initialMessages.length > 0) {
-      setMessages(initialMessages)
-      initializedRef.current = true
-    }
-  }, [initialMessages, setMessages])
 
   const handleSubmit = useCallback(
     (message: PromptInputMessage) => {
