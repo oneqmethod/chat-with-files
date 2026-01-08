@@ -12,6 +12,7 @@ import {
   MoreHorizontal,
   Trash2,
   ChevronUp,
+  GalleryVerticalEnd,
 } from 'lucide-react'
 import { deleteChat } from '@/app/(frontend)/(app)/actions'
 import {
@@ -25,7 +26,7 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem,
+  SidebarMenuItem, SidebarSeparator,
 } from '@/components/ui/sidebar'
 import {
   DropdownMenu,
@@ -90,6 +91,11 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
     <Sidebar>
       <SidebarHeader>
         <SidebarMenu>
+          <SidebarMenuItem className="flex items-center gap-2 px-1 py-3">
+            <GalleryVerticalEnd />
+            <h1>Chat with your Files</h1>
+          </SidebarMenuItem>
+
           {navItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild isActive={pathname === item.href}>
@@ -106,9 +112,11 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Chats</SidebarGroupLabel>
-          <SidebarGroupAction title="New Chat" onClick={handleNewChat}>
-            <Plus />
-            <span className="sr-only">New Chat</span>
+          <SidebarGroupAction title="New Chat">
+            <Link href={`/chat/new`}>
+              <Plus className="size-4" />
+              <span className="sr-only">New Chat</span>
+            </Link>
           </SidebarGroupAction>
           <SidebarGroupContent>
             <SidebarMenu>
