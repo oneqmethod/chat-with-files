@@ -160,7 +160,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <Conversation className="min-h-0 flex-1 overflow-auto">
+      <Conversation className="min-h-0">
         <ConversationContent>
           {messages.length === 0 ? (
             <ConversationEmptyState

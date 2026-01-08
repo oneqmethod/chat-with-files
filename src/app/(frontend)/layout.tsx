@@ -25,9 +25,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           />
         )}
       </head>
-      <body>
+      <body className="flex flex-col">
         <ThemeProvider>
-          <main>{children}</main>
+          {children}
           <Toaster />
         </ThemeProvider>
       </body>
