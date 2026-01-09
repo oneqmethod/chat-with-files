@@ -44,18 +44,30 @@ Use skills for up-to-date docs:
 - `pnpm dlx shadcn@latest search <query>` - Search registries
 - `pnpm dlx shadcn@latest view <component>` - View before install
 
-## Workflow
+## Workflow (MANDATORY)
 
-**ALWAYS follow this workflow for any implementation request:**
+YOU MUST follow this workflow for ANY implementation:
 
-1. **Plan First** - Even outside plan mode, create a plan before building
-2. **Create bd Issues** - Convert plan steps to bd issues (`bd create`)
+1. **Plan First** - Create plan before ANY code changes
+2. **Create bd Issues** - `bd create "title"` for each task
 3. **Claim Work** - `bd update <id> --status in_progress`
-4. **Build** - Implement the issue
-5. **Close** - `bd close <id>` when done
-6. **Repeat** - Next issue until all complete
+4. **Build** - Implement ONE issue at a time
+5. **Close** - `bd close <id>` immediately when done
+6. **Session End** - Before saying "done":
+   ```
+   git status
+   git add <files>
+   bd sync
+   git commit -m "..."
+   bd sync
+   git push
+   ```
 
-**NEVER build without bd issues.** All work must be tracked.
+**VIOLATIONS:**
+
+- NEVER edit code without a claimed bd issue
+- NEVER commit without running `bd sync`
+- NEVER say "done" without `git push` succeeding
 
 ## Rules
 

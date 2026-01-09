@@ -17,6 +17,10 @@
       {
         "matcher": "Edit|Write",
         "hooks": [{ "type": "command", "command": "codemap hook pre-edit" }]
+      },
+      {
+        "matcher": "Bash(git push*)",
+        "hooks": [{ "type": "command", "command": ".claude/hooks/enforce-bd-workflow.sh" }]
       }
     ],
     "PostToolUse": [

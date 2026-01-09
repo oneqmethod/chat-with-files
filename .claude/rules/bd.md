@@ -1,5 +1,18 @@
 # bd (Beads) Rules
 
+## CRITICAL - Non-Negotiable
+
+YOU MUST:
+
+- Create bd issues BEFORE writing ANY code
+- Have exactly ONE issue `in_progress` while coding
+- Run `bd sync` before AND after every git commit
+- Push to remote before ending session
+
+NEVER skip these steps. No exceptions for "small changes".
+
+---
+
 Issue tracking with bd. Run `bd onboard` to get started.
 
 ## Commands
