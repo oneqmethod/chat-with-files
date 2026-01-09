@@ -112,8 +112,8 @@ export const Users: CollectionConfig = {
     {
       name: 'fileSearchStoreId',
       type: 'text',
-      admin: {
-        readOnly: true,
+      access: {
+        update: adminOnlyField,
       },
     },
     {
