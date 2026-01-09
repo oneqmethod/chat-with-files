@@ -15,6 +15,10 @@ const queueGoogleUpload: CollectionAfterChangeHook = async ({ doc, operation, re
       userId: typeof doc.user === 'string' ? doc.user : doc.user.id,
     },
   })
+
+  // Run queued jobs immediately instead of waiting for autoRun
+  await req.payload.jobs.run()
+
   return doc
 }
 
