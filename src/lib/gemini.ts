@@ -1,5 +1,4 @@
 import { GoogleGenAI } from '@google/genai'
-import fs from 'fs/promises'
 
 let geminiClient: GoogleGenAI | null = null
 
@@ -64,11 +63,15 @@ export async function deleteStore(storeId: string): Promise<void> {
   })
 }
 
-export async function uploadToStoreFromPath(
+export async function uploadToStoreFromUrl(
   storeId: string,
-  filePath: string,
+  fileUrl: string,
   filename: string,
 ): Promise<string> {
-  const fileBuffer = await fs.readFile(filePath)
-  return uploadToStore(storeId, new Blob([fileBuffer]), filename)
+  const response = await fetch(fileUrl)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch file from ${fileUrl}: ${response.statusText}`)
+  }
+  const blob = await response.blob()
+  return uploadToStore(storeId, blob, filename)
 }
