@@ -68,7 +68,8 @@ export async function uploadToStoreFromPath(
   storeId: string,
   filePath: string,
   filename: string,
+  mimeType: string,
 ): Promise<string> {
   const fileBuffer = await fs.readFile(filePath)
-  return uploadToStore(storeId, new Blob([fileBuffer]), filename)
+  return uploadToStore(storeId, new Blob([fileBuffer], { type: mimeType }), filename)
 }

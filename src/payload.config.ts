@@ -62,6 +62,7 @@ export default buildConfig({
             user.fileSearchStoreId,
             filePath,
             media.filename,
+            media.mimeType!,
           )
 
           await req.payload.update({
