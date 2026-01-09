@@ -1,56 +1,4 @@
 {
-  "enabledPlugins": {
-    "payload@payload-marketplace": true,
-    "shadcn@oneq-skills": true,
-    "nextjs@oneq-skills": true
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [{ "type": "command", "command": "codemap hook session-start" }]
-      },
-      {
-        "hooks": [{ "type": "command", "command": "bd prime" }]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [{ "type": "command", "command": "codemap hook pre-edit" }]
-      },
-      {
-        "matcher": "Bash(git push*)",
-        "hooks": [{ "type": "command", "command": ".claude/hooks/enforce-bd-workflow.sh" }]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          { "type": "command", "command": "codemap hook post-edit" },
-          { "type": "command", "command": "npx prettier --write \"$CLAUDE_FILE_PATH\"" }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [{ "type": "command", "command": "codemap hook prompt-submit" }]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [{ "type": "command", "command": "codemap hook pre-compact" }]
-      },
-      {
-        "hooks": [{ "type": "command", "command": "bd prime" }]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [{ "type": "command", "command": "codemap hook session-stop" }]
-      }
-    ]
-  },
   "permissions": {
     "deny": [
       "Read(.env)",
@@ -60,5 +8,104 @@
       "Write(.env)",
       "Write(.env.*)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codemap hook session-start"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bd prime"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codemap hook pre-edit"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git push*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/enforce-bd-workflow.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codemap hook post-edit"
+          },
+          {
+            "type": "command",
+            "command": "npx prettier --write \"$CLAUDE_FILE_PATH\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codemap hook prompt-submit"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codemap hook pre-compact"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bd prime"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codemap hook session-stop"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "payload@payload-marketplace": true,
+    "shadcn@oneq-skills": true,
+    "nextjs@oneq-skills": true,
+    "code-simplifier@claude-plugins-official": true
   }
 }
