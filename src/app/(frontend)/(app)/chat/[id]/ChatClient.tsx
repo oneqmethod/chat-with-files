@@ -12,11 +12,21 @@ import {
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation'
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message'
-import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
 import {
   PromptInput,
-  PromptInputButton,
+  PromptInputActionAddAttachments,
+  PromptInputActionMenu,
+  PromptInputActionMenuContent,
+  PromptInputActionMenuTrigger,
+  PromptInputAttachment,
+  PromptInputAttachments,
+  PromptInputBody,
+  PromptInputFooter,
+  type PromptInputMessage,
+  PromptInputSpeechButton,
+  PromptInputSubmit,
   PromptInputTextarea,
+  PromptInputTools,
 } from '@/components/ai-elements/prompt-input'
 import {
   InlineCitation,
@@ -29,7 +39,7 @@ import { HoverCardTrigger } from '@/components/ui/hover-card'
 import { Badge } from '@/components/ui/badge'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Loader } from '@/components/ai-elements/loader'
-import { MessageSquare, Send } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 
 type SourceUrlPart = {
   type: 'source-url'
@@ -64,6 +74,7 @@ export function ChatClient({ initialMessages, chatId }: ChatClientProps) {
   const [actualChatId, setActualChatId] = useState<string | null>(chatId)
   const isNewChat = actualChatId === null
   const initializedRef = useRef(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const transport = useMemo(
     () =>
@@ -93,8 +104,11 @@ export function ChatClient({ initialMessages, chatId }: ChatClientProps) {
 
   const handleSubmit = useCallback(
     (message: PromptInputMessage) => {
-      if (message.text.trim()) {
-        sendMessage({ text: message.text })
+      if (message.text.trim() || message.files.length > 0) {
+        sendMessage({
+          text: message.text,
+          files: message.files.length > 0 ? message.files : undefined,
+        })
         setInputValue('')
       }
     },
@@ -207,15 +221,30 @@ export function ChatClient({ initialMessages, chatId }: ChatClientProps) {
       </Conversation>
 
       <div className="border-t bg-background p-4">
-        <PromptInput onSubmit={handleSubmit}>
-          <PromptInputTextarea
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask about your files..."
-          />
-          <PromptInputButton type="submit" disabled={!inputValue.trim() || isLoading}>
-            <Send className="h-4 w-4" />
-          </PromptInputButton>
+        <PromptInput globalDrop multiple onSubmit={handleSubmit}>
+          <PromptInputAttachments>
+            {(attachment) => <PromptInputAttachment data={attachment} />}
+          </PromptInputAttachments>
+          <PromptInputBody>
+            <PromptInputTextarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Ask about your files..."
+            />
+          </PromptInputBody>
+          <PromptInputFooter>
+            <PromptInputTools>
+              <PromptInputActionMenu>
+                <PromptInputActionMenuTrigger />
+                <PromptInputActionMenuContent>
+                  <PromptInputActionAddAttachments />
+                </PromptInputActionMenuContent>
+              </PromptInputActionMenu>
+              <PromptInputSpeechButton textareaRef={textareaRef} />
+            </PromptInputTools>
+            <PromptInputSubmit status={status} />
+          </PromptInputFooter>
         </PromptInput>
       </div>
     </div>
