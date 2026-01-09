@@ -84,10 +84,6 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
     router.refresh()
   }
 
-  async function handleNewChat() {
-    router.push('/dashboard')
-  }
-
   return (
     <Sidebar>
       <SidebarHeader>
