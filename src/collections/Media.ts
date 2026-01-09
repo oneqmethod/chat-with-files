@@ -4,6 +4,7 @@ import type {
   CollectionBeforeDeleteHook,
 } from 'payload'
 import { deleteFromStore } from '@/lib/gemini'
+import { isAdminOrOwner } from '@/lib/access'
 
 const queueGoogleUpload: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
   if (operation !== 'create' || !doc.filename || !doc.user) return doc
@@ -37,19 +38,10 @@ export const Media: CollectionConfig = {
   slug: 'media',
   upload: true,
   access: {
-    read: ({ req }) => {
-      if (!req.user) return false
-      return { user: { equals: req.user.id } }
-    },
+    read: isAdminOrOwner,
     create: ({ req }) => !!req.user,
-    update: ({ req }) => {
-      if (!req.user) return false
-      return { user: { equals: req.user.id } }
-    },
-    delete: ({ req }) => {
-      if (!req.user) return false
-      return { user: { equals: req.user.id } }
-    },
+    update: isAdminOrOwner,
+    delete: isAdminOrOwner,
   },
   fields: [
     {

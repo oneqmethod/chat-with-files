@@ -1,21 +1,13 @@
 import type { CollectionConfig } from 'payload'
+import { isAdminOrOwner } from '@/lib/access'
 
 export const Chats: CollectionConfig = {
   slug: 'chats',
   access: {
-    read: ({ req }) => {
-      if (!req.user) return false
-      return { user: { equals: req.user.id } }
-    },
+    read: isAdminOrOwner,
     create: ({ req }) => !!req.user,
-    update: ({ req }) => {
-      if (!req.user) return false
-      return { user: { equals: req.user.id } }
-    },
-    delete: ({ req }) => {
-      if (!req.user) return false
-      return { user: { equals: req.user.id } }
-    },
+    update: isAdminOrOwner,
+    delete: isAdminOrOwner,
   },
   fields: [
     {

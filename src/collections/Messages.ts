@@ -1,22 +1,13 @@
 import type { CollectionConfig } from 'payload'
+import { isAdminOrOwnerViaChat } from '@/lib/access'
 
 export const Messages: CollectionConfig = {
   slug: 'messages',
   access: {
-    read: async ({ req }) => {
-      if (!req.user) return false
-      return {
-        'chat.user': { equals: req.user.id },
-      }
-    },
+    read: isAdminOrOwnerViaChat,
     create: ({ req }) => !!req.user,
     update: () => false,
-    delete: async ({ req }) => {
-      if (!req.user) return false
-      return {
-        'chat.user': { equals: req.user.id },
-      }
-    },
+    delete: isAdminOrOwnerViaChat,
   },
   fields: [
     {

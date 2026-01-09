@@ -1,11 +1,11 @@
 import type {
-  Access,
   CollectionConfig,
   CollectionAfterChangeHook,
   CollectionBeforeDeleteHook,
   Endpoint,
 } from 'payload'
 import { createFileSearchStore, deleteStore, listDocumentsInStore } from '@/lib/gemini'
+import { isAdmin, isAdminOrSelf, adminOnlyField } from '@/lib/access'
 import type { User } from '@/payload-types'
 
 const createUserFileStore: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
@@ -78,18 +78,6 @@ const userFilesEndpoint: Endpoint = {
   },
 }
 
-const isAdminOrSelf: Access = ({ req }) => {
-  const user = req.user as User | undefined
-  if (!user) return false
-  if (user.role === 'admin') return true
-  return { id: { equals: user.id } }
-}
-
-const isAdmin: Access = ({ req }) => {
-  const user = req.user as User | undefined
-  return user?.role === 'admin'
-}
-
 export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
@@ -118,7 +106,7 @@ export const Users: CollectionConfig = {
         { label: 'Admin', value: 'admin' },
       ],
       access: {
-        update: ({ req }) => (req.user as User | undefined)?.role === 'admin',
+        update: adminOnlyField,
       },
     },
     {
