@@ -1,5 +1,10 @@
-import type { CollectionConfig, CollectionAfterChangeHook } from 'payload'
-import { createFileSearchStore } from '@/lib/gemini'
+import type {
+  CollectionConfig,
+  CollectionAfterChangeHook,
+  CollectionBeforeDeleteHook,
+  Endpoint,
+} from 'payload'
+import { createFileSearchStore, deleteStore, listDocumentsInStore } from '@/lib/gemini'
 
 const createUserFileStore: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
   if (operation !== 'create') return doc
@@ -19,12 +24,64 @@ const createUserFileStore: CollectionAfterChangeHook = async ({ doc, operation, 
   }
 }
 
+const deleteUserFileStore: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  try {
+    const user = await req.payload.findByID({ collection: 'users', id })
+    if (user.fileSearchStoreId) {
+      await deleteStore(user.fileSearchStoreId)
+      req.payload.logger.info(`Deleted file search store for user ${id}`)
+    }
+  } catch (error) {
+    req.payload.logger.error(`Failed to delete file search store for user ${id}: ${error}`)
+  }
+}
+
+const userFilesEndpoint: Endpoint = {
+  path: '/:id/files',
+  method: 'get',
+  handler: async (req) => {
+    const requestingUser = req.user
+    if (!requestingUser) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const userId = req.routeParams?.id as string
+    const isSelf = requestingUser.id === userId
+
+    if (!isSelf) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    try {
+      const user = await req.payload.findByID({ collection: 'users', id: userId })
+
+      // Get Media records for this user
+      const media = await req.payload.find({
+        collection: 'media',
+        where: { user: { equals: userId } },
+        limit: 100,
+      })
+
+      // Get Google store documents
+      let googleDocs: Awaited<ReturnType<typeof listDocumentsInStore>> = []
+      if (user.fileSearchStoreId) {
+        googleDocs = await listDocumentsInStore(user.fileSearchStoreId)
+      }
+
+      return Response.json({ googleDocs, media: media.docs })
+    } catch (error) {
+      return Response.json({ error: 'Failed to fetch files' }, { status: 500 })
+    }
+  },
+}
+
 export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
     useAsTitle: 'email',
   },
   auth: true,
+  endpoints: [userFilesEndpoint],
   fields: [
     {
       name: 'displayName',
@@ -37,8 +94,18 @@ export const Users: CollectionConfig = {
         readOnly: true,
       },
     },
+    {
+      name: 'googleFiles',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '/components/admin/UserFilesField',
+        },
+      },
+    },
   ],
   hooks: {
     afterChange: [createUserFileStore],
+    beforeDelete: [deleteUserFileStore],
   },
 }

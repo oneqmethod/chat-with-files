@@ -73,3 +73,23 @@ export async function uploadToStoreFromPath(
   const fileBuffer = await fs.readFile(filePath)
   return uploadToStore(storeId, new Blob([fileBuffer], { type: mimeType }), filename)
 }
+
+export interface FileSearchDocument {
+  name: string
+  displayName?: string
+  state?: string
+  sizeBytes?: string
+  createTime?: string
+  updateTime?: string
+  mimeType?: string
+}
+
+export async function listDocumentsInStore(storeId: string): Promise<FileSearchDocument[]> {
+  const ai = getGeminiClient()
+  const docs: FileSearchDocument[] = []
+  const pager = await ai.fileSearchStores.documents.list({ parent: storeId })
+  for await (const doc of pager) {
+    docs.push(doc as FileSearchDocument)
+  }
+  return docs
+}
