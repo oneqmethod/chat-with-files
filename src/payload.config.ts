@@ -10,7 +10,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Chats } from './collections/Chats'
 import { Messages } from './collections/Messages'
-import { uploadToStoreFromUrl } from './lib/gemini'
+import { uploadToStoreFromPath } from './lib/gemini'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -57,11 +57,10 @@ export default buildConfig({
             data: { status: 'indexing' },
           })
 
-          const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
-          const fileUrl = `${baseUrl}${media.url}`
-          const geminiDocId = await uploadToStoreFromUrl(
+          const filePath = path.join(process.cwd(), 'media', media.filename)
+          const geminiDocId = await uploadToStoreFromPath(
             user.fileSearchStoreId,
-            fileUrl,
+            filePath,
             media.filename,
           )
 
