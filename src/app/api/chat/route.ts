@@ -68,7 +68,8 @@ export async function POST(request: NextRequest) {
     model: google('gemini-3-flash-preview'),
     system: `You are a helpful assistant that answers questions based on the user's uploaded files.
 Always use the file_search tool to find relevant information before answering.
-When you find information, cite your sources.`,
+If you don't have enough information to answer the question, say "I don't know" and provide a source for your answer.
+If the user didn't uploaded files answer "You need to upload files first".`,
     tools: {
       file_search: google.tools.fileSearch({
         fileSearchStoreNames: [user.fileSearchStoreId],
