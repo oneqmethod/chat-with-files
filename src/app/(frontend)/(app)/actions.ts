@@ -21,6 +21,21 @@ export async function deleteChat(chatId: string) {
   revalidatePath('/chat')
 }
 
+export async function renameChat(chatId: string, newTitle: string) {
+  const payload = await getPayload({ config })
+  const { user } = await payload.auth({ headers: await headers() })
+
+  if (!user) throw new Error('Unauthorized')
+
+  const chat = await payload.findByID({ collection: 'chats', id: chatId })
+  if ((chat.user as { id: string })?.id !== user.id) {
+    throw new Error('Forbidden')
+  }
+
+  await payload.update({ collection: 'chats', id: chatId, data: { title: newTitle } })
+  revalidatePath('/chat')
+}
+
 export async function logout(): Promise<never> {
   const cookieStore = await cookies()
   cookieStore.delete('payload-token')

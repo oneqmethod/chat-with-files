@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
@@ -11,10 +11,11 @@ import {
   LayoutDashboard,
   MoreHorizontal,
   Trash2,
+  Pencil,
   ChevronUp,
   GalleryVerticalEnd,
 } from 'lucide-react'
-import { deleteChat, logout } from '@/app/(frontend)/(app)/actions'
+import { deleteChat, renameChat, logout } from '@/app/(frontend)/(app)/actions'
 import {
   Sidebar,
   SidebarContent,
@@ -36,6 +37,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +73,8 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
   const router = useRouter()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [chatToDelete, setChatToDelete] = useState<Chat | null>(null)
+  const [chatToRename, setChatToRename] = useState<Chat | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   async function handleConfirmDelete() {
     if (!chatToDelete) return
@@ -73,6 +85,17 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
       router.push('/dashboard')
     }
     router.refresh()
+  }
+
+  function handleRename(formData: FormData) {
+    if (!chatToRename) return
+    const newTitle = formData.get('title') as string
+    if (!newTitle.trim()) return
+    startTransition(async () => {
+      await renameChat(chatToRename.id, newTitle.trim())
+      setChatToRename(null)
+      router.refresh()
+    })
   }
 
   async function handleLogout() {
@@ -133,6 +156,10 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-32">
+                      <DropdownMenuItem onClick={() => setChatToRename(chat)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Rename
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         onClick={() => setChatToDelete(chat)}
@@ -183,6 +210,30 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
+      <Dialog open={!!chatToRename} onOpenChange={(open) => !open && setChatToRename(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename chat</DialogTitle>
+          </DialogHeader>
+          <form action={handleRename}>
+            <Input
+              name="title"
+              defaultValue={chatToRename?.title}
+              placeholder="Chat title"
+              autoFocus
+            />
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setChatToRename(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Saving...' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!chatToDelete} onOpenChange={(open) => !open && setChatToDelete(null)}>
         <AlertDialogContent>
