@@ -1,10 +1,10 @@
 'use client'
 
-import { useChat } from '@ai-sdk/react'
 import type { UIMessage } from '@ai-sdk/react'
+import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   Conversation,
   ConversationContent,
@@ -12,16 +12,17 @@ import {
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation'
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message'
+import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
 import {
   PromptInput,
-  PromptInputTextarea,
   PromptInputButton,
+  PromptInputTextarea,
 } from '@/components/ai-elements/prompt-input'
 import {
   InlineCitation,
   InlineCitationCard,
-  InlineCitationCardTrigger,
   InlineCitationCardBody,
+  InlineCitationCardTrigger,
   InlineCitationSource,
 } from '@/components/ai-elements/inline-citation'
 import { HoverCardTrigger } from '@/components/ui/hover-card'
@@ -29,7 +30,6 @@ import { Badge } from '@/components/ui/badge'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Loader } from '@/components/ai-elements/loader'
 import { MessageSquare, Send } from 'lucide-react'
-import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
 
 type SourceUrlPart = {
   type: 'source-url'
