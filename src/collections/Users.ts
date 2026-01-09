@@ -1,10 +1,12 @@
 import type {
+  Access,
   CollectionConfig,
   CollectionAfterChangeHook,
   CollectionBeforeDeleteHook,
   Endpoint,
 } from 'payload'
 import { createFileSearchStore, deleteStore, listDocumentsInStore } from '@/lib/gemini'
+import type { User } from '@/payload-types'
 
 const createUserFileStore: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
   if (operation !== 'create') return doc
@@ -40,15 +42,16 @@ const userFilesEndpoint: Endpoint = {
   path: '/:id/files',
   method: 'get',
   handler: async (req) => {
-    const requestingUser = req.user
+    const requestingUser = req.user as User | undefined
     if (!requestingUser) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const userId = req.routeParams?.id as string
     const isSelf = requestingUser.id === userId
+    const isAdmin = requestingUser.role === 'admin'
 
-    if (!isSelf) {
+    if (!isSelf && !isAdmin) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -75,17 +78,48 @@ const userFilesEndpoint: Endpoint = {
   },
 }
 
+const isAdminOrSelf: Access = ({ req }) => {
+  const user = req.user as User | undefined
+  if (!user) return false
+  if (user.role === 'admin') return true
+  return { id: { equals: user.id } }
+}
+
+const isAdmin: Access = ({ req }) => {
+  const user = req.user as User | undefined
+  return user?.role === 'admin'
+}
+
 export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
     useAsTitle: 'email',
   },
   auth: true,
+  access: {
+    read: isAdminOrSelf,
+    create: isAdmin,
+    update: isAdminOrSelf,
+    delete: isAdmin,
+    admin: ({ req }) => !!req.user,
+  },
   endpoints: [userFilesEndpoint],
   fields: [
     {
       name: 'displayName',
       type: 'text',
+    },
+    {
+      name: 'role',
+      type: 'select',
+      defaultValue: 'user',
+      options: [
+        { label: 'User', value: 'user' },
+        { label: 'Admin', value: 'admin' },
+      ],
+      access: {
+        update: ({ req }) => (req.user as User | undefined)?.role === 'admin',
+      },
     },
     {
       name: 'fileSearchStoreId',

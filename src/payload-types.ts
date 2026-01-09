@@ -135,6 +135,7 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   displayName?: string | null;
+  role?: ('user' | 'admin') | null;
   fileSearchStoreId?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -389,6 +390,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   displayName?: T;
+  role?: T;
   fileSearchStoreId?: T;
   updatedAt?: T;
   createdAt?: T;
