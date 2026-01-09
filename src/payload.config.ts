@@ -82,5 +82,10 @@ export default buildConfig({
         },
       } as TaskConfig<'uploadToGoogle'>,
     ],
+    autoRun: [
+      {
+        cron: '*/30 * * * * *', // Every 30 seconds
+      },
+    ],
   },
 })
