@@ -18,7 +18,7 @@ Upload documents and chat with them using Google Gemini's File Search API. A RAG
 ## Tech Stack
 
 | Layer    | Technology                                      |
-| -------- |-------------------------------------------------|
+| -------- | ----------------------------------------------- |
 | Frontend | Next.js 16 (App Router, RSC)                    |
 | Backend  | PayloadCMS 3 + MongoDB                          |
 | AI       | Google Gemini 3 Flash Preview + File Search API |
