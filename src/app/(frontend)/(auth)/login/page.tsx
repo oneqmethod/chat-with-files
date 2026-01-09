@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { login } from '../actions'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -21,22 +22,17 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include',
-      })
+      const result = await login(email, password)
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.errors?.[0]?.message || 'Invalid credentials')
+      if ('error' in result) {
+        setError(result.error)
+        return
       }
 
       router.push('/dashboard')
       router.refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+    } catch {
+      setError('Login failed')
     } finally {
       setLoading(false)
     }

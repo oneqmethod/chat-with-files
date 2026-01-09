@@ -14,7 +14,7 @@ import {
   ChevronUp,
   GalleryVerticalEnd,
 } from 'lucide-react'
-import { deleteChat } from '@/app/(frontend)/(app)/actions'
+import { deleteChat, logout } from '@/app/(frontend)/(app)/actions'
 import {
   Sidebar,
   SidebarContent,
@@ -76,12 +76,7 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
   }
 
   async function handleLogout() {
-    await fetch('/api/users/logout', {
-      method: 'POST',
-      credentials: 'include',
-    })
-    router.push('/login')
-    router.refresh()
+    await logout()
   }
 
   return (

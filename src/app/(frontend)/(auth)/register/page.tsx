@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { register } from '../actions'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -22,34 +23,17 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, displayName }),
-        credentials: 'include',
-      })
+      const result = await register(email, password, displayName || undefined)
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.errors?.[0]?.message || 'Registration failed')
-      }
-
-      const loginRes = await fetch('/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include',
-      })
-
-      if (!loginRes.ok) {
-        router.push('/login')
+      if ('error' in result) {
+        setError(result.error)
         return
       }
 
       router.push('/dashboard')
       router.refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed')
+    } catch {
+      setError('Registration failed')
     } finally {
       setLoading(false)
     }
