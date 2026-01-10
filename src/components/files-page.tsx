@@ -42,8 +42,11 @@ export function FilesPage({ userId }: FilesPageProps) {
         }))
         setFiles((prev) => {
           // Keep optimistic files that haven't been confirmed yet
+          // Dedupe by both id AND filename to handle race conditions
           const optimisticFiles = prev.filter(
-            (f) => f.isOptimistic && !mediaFiles.some((mf) => mf.id === f.id),
+            (f) =>
+              f.isOptimistic &&
+              !mediaFiles.some((mf) => mf.id === f.id || mf.filename === f.filename),
           )
           return [...optimisticFiles, ...mediaFiles]
         })
