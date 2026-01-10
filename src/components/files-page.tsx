@@ -24,7 +24,8 @@ interface FilesPageProps {
 export function FilesPage({ userId: _userId }: FilesPageProps) {
   const router = useRouter()
   const [files, setFiles] = useState<FileItem[]>([])
-  const [isPending, startTransition] = useTransition()
+  const [isLoading, setIsLoading] = useState(true)
+  const [, startTransition] = useTransition()
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const prevReadyCountRef = useRef<number>(0)
 
@@ -49,14 +50,14 @@ export function FilesPage({ userId: _userId }: FilesPageProps) {
       }
     } catch (error) {
       console.error('Failed to fetch files:', error)
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
-  // Initial fetch with transition
+  // Initial fetch
   useEffect(() => {
-    startTransition(() => {
-      fetchFiles()
-    })
+    fetchFiles()
   }, [fetchFiles])
 
   // Refresh server components when ready count changes
@@ -212,7 +213,7 @@ export function FilesPage({ userId: _userId }: FilesPageProps) {
         </FileUpload>
       </div>
 
-      {isPending ? (
+      {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>

@@ -36,7 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <header className="sticky top-0 z-10 flex h-12 items-center border-b bg-background px-4">
           <SidebarTrigger />
         </header>
-        <main className="flex min-h-0 flex-1 flex-col">{children}</main>
+        <main className="flex min-h-0 flex-1 flex-col p-4">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   )
