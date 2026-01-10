@@ -1,5 +1,6 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { revalidatePath } from 'next/cache'
 import path from 'path'
 import { buildConfig } from 'payload'
 import type { TaskConfig } from 'payload'
@@ -71,6 +72,7 @@ export default buildConfig({
             data: { status: 'ready', geminiDocumentId: geminiDocId },
           })
 
+          revalidatePath('/(frontend)/(app)')
           return { output: { success: true } }
         },
         onFail: async ({ input, req }) => {

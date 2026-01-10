@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Upload, X, Check, Loader2, AlertCircle, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -22,9 +23,11 @@ interface FilesPageProps {
 }
 
 export function FilesPage({ userId }: FilesPageProps) {
+  const router = useRouter()
   const [files, setFiles] = useState<FileItem[]>([])
   const [loading, setLoading] = useState(true)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const prevReadyCountRef = useRef<number>(0)
 
   const fetchFiles = useCallback(async () => {
     try {
@@ -55,6 +58,15 @@ export function FilesPage({ userId }: FilesPageProps) {
   useEffect(() => {
     fetchFiles()
   }, [fetchFiles])
+
+  // Refresh server components when ready count changes
+  useEffect(() => {
+    const readyCount = files.filter((f) => f.status === 'ready').length
+    if (readyCount !== prevReadyCountRef.current) {
+      prevReadyCountRef.current = readyCount
+      router.refresh()
+    }
+  }, [files, router])
 
   // Poll for status updates when there are pending/indexing files
   useEffect(() => {

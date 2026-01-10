@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
@@ -37,6 +38,7 @@ export async function DELETE(
       id,
     })
 
+    revalidatePath('/(frontend)/(app)')
     return NextResponse.json({ success: true })
   } catch (error) {
     payload.logger.error(`File delete error: ${error}`)
