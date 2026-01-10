@@ -44,9 +44,6 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: var(--font-geist-mono), ui-monospace, monospace;
-  --font-mono: var(--font-jetbrains-mono), monospace;
-  --font-serif: serif;
   --radius: 0.75rem;
   --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
   --tracking-tight: calc(var(--tracking-normal) - 0.025em);
@@ -107,9 +104,6 @@
   --sidebar-border: oklch(0.9276 0.0058 264.5313);
   --sidebar-ring: oklch(0.6716 0.1368 48.513);
   --destructive-foreground: oklch(0.9851 0 0);
-  --font-sans: var(--font-geist-mono), ui-monospace, monospace;
-  --font-serif: serif;
-  --font-mono: var(--font-jetbrains-mono), monospace;
   --shadow-color: #000000;
   --shadow-opacity: 0.05;
   --shadow-blur: 4px;
@@ -163,9 +157,6 @@
   --sidebar-ring: oklch(0.7214 0.1337 49.9802);
   --destructive-foreground: oklch(0.1797 0.0043 308.1928);
   --radius: 0.75rem;
-  --font-sans: var(--font-geist-mono), ui-monospace, monospace;
-  --font-serif: serif;
-  --font-mono: var(--font-jetbrains-mono), monospace;
   --shadow-color: #000000;
   --shadow-opacity: 0.05;
   --shadow-blur: 4px;

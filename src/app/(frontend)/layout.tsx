@@ -1,20 +1,20 @@
 import React from 'react'
 import Script from 'next/script'
-import { Geist_Mono, JetBrains_Mono } from 'next/font/google'
+import { Geist, JetBrains_Mono } from 'next/font/google'
 
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 
 import './styles.css'
 
-const geistMono = Geist_Mono({
+const sans = Geist({
   subsets: ['latin'],
-  variable: '--font-geist-mono',
+  variable: '--font-sans',
 })
 
-const jetbrainsMono = JetBrains_Mono({
+const mono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-jetbrains-mono',
+  variable: '--font-mono',
 })
 
 export const metadata = {
@@ -29,7 +29,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistMono.variable} ${jetbrainsMono.variable}`}
+      className={`${sans.variable} ${mono.variable}`}
     >
       <head>
         {process.env.NODE_ENV === 'development' && (
