@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ObjectId } from 'bson'
 import { Upload, X, Check, Loader2, AlertCircle, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -62,28 +63,28 @@ export function FilesPage({ files }: FilesPageProps) {
     },
   ) {
     for (const file of uploadFiles) {
-      const tempId = `uploading-${Date.now()}-${file.name}`
+      const id = new ObjectId().toHexString()
 
-      // Add temp card immediately
-      setUploadingFiles((prev) => [...prev, { id: tempId, name: file.name, size: file.size }])
+      // Add temp card immediately with same ID that will be used server-side
+      setUploadingFiles((prev) => [...prev, { id, name: file.name, size: file.size }])
 
       onProgress(file, 10)
 
       const formData = new FormData()
+      formData.append('id', id)
       formData.append('file', file)
 
       onProgress(file, 30)
 
       const result = await uploadFile(formData)
 
-      // Remove temp card
-      setUploadingFiles((prev) => prev.filter((f) => f.id !== tempId))
-
       if (result.success) {
         onProgress(file, 100)
         onSuccess(file)
         router.refresh()
       } else {
+        // Remove temp card on error
+        setUploadingFiles((prev) => prev.filter((f) => f.id !== id))
         onError(file, new Error(result.error || 'Upload failed'))
       }
     }
@@ -95,6 +96,9 @@ export function FilesPage({ files }: FilesPageProps) {
       router.refresh()
     }
   }
+
+  // Filter out uploading files that already exist in server data
+  const pendingUploads = uploadingFiles.filter((u) => !files.some((f) => f.id === u.id))
 
   return (
     <div className="container mx-auto max-w-5xl py-8">
@@ -113,7 +117,7 @@ export function FilesPage({ files }: FilesPageProps) {
         </FileUpload>
       </div>
 
-      {files.length === 0 && uploadingFiles.length === 0 ? (
+      {files.length === 0 && pendingUploads.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">No files uploaded yet</p>
@@ -121,7 +125,7 @@ export function FilesPage({ files }: FilesPageProps) {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {uploadingFiles.map((file) => (
+          {pendingUploads.map((file) => (
             <Card key={file.id} className="group relative">
               <CardContent className="flex items-start gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">
