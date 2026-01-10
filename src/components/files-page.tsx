@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, X, Check, Loader2, AlertCircle, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -38,8 +39,15 @@ function getStatusIcon(status: FileStatus) {
   }
 }
 
+interface UploadingFile {
+  id: string
+  name: string
+  size: number
+}
+
 export function FilesPage({ files }: FilesPageProps) {
   const router = useRouter()
+  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
 
   async function handleUpload(
     uploadFiles: File[],
@@ -54,6 +62,11 @@ export function FilesPage({ files }: FilesPageProps) {
     },
   ) {
     for (const file of uploadFiles) {
+      const tempId = `uploading-${Date.now()}-${file.name}`
+
+      // Add temp card immediately
+      setUploadingFiles((prev) => [...prev, { id: tempId, name: file.name, size: file.size }])
+
       onProgress(file, 10)
 
       const formData = new FormData()
@@ -62,6 +75,9 @@ export function FilesPage({ files }: FilesPageProps) {
       onProgress(file, 30)
 
       const result = await uploadFile(formData)
+
+      // Remove temp card
+      setUploadingFiles((prev) => prev.filter((f) => f.id !== tempId))
 
       if (result.success) {
         onProgress(file, 100)
@@ -97,7 +113,7 @@ export function FilesPage({ files }: FilesPageProps) {
         </FileUpload>
       </div>
 
-      {files.length === 0 ? (
+      {files.length === 0 && uploadingFiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">No files uploaded yet</p>
@@ -105,6 +121,28 @@ export function FilesPage({ files }: FilesPageProps) {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {uploadingFiles.map((file) => (
+            <Card key={file.id} className="group relative">
+              <CardContent className="flex items-start gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium" title={file.name}>
+                    {file.name}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                      <span>Uploading</span>
+                    </span>
+                    <span>•</span>
+                    <span>{formatFileSize(file.size)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
           {files.map((file) => (
             <Card key={file.id} className="group relative">
               <CardContent className="flex items-start gap-3 p-4">
