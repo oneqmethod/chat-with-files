@@ -94,7 +94,7 @@ import { Check, X, Loader2 } from 'lucide-react'
 
 ## Use Skill
 
-Run `/shadcn` to:
+Run `/shadcn:component-selector` to:
 
 - Search component registries
 - Find best component for a feature

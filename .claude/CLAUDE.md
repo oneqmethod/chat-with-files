@@ -27,8 +27,8 @@ src/
 Use skills for up-to-date docs:
 
 - `/payload` - PayloadCMS patterns, hooks, access control
-- `/shadcn` - Component search, registry lookup
-- `/nextjs` - App Router, RSC, server actions
+- `/shadcn:component-selector` - Component search, registry lookup
+- `/nextjs:devtools` - App Router, RSC, server actions
 
 ## Quick Commands
 

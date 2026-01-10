@@ -101,7 +101,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 ## Use Skill
 
-Run `/nextjs` for:
+Run `/nextjs:devtools` for:
 
 - Route debugging
 - Error investigation
