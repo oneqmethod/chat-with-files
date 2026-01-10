@@ -41,9 +41,13 @@ export function FilesPage({ userId }: FilesPageProps) {
           status: doc.status as FileStatus,
         }))
         setFiles((prev) => {
-          // Keep optimistic files not yet on server (by id only)
+          // Keep optimistic files not yet on server
+          // Filter by both id AND filename - if server has a file with same filename,
+          // the upload completed and we should use server's version
           const optimisticFiles = prev.filter(
-            (f) => f.isOptimistic && !mediaFiles.some((mf) => mf.id === f.id),
+            (f) =>
+              f.isOptimistic &&
+              !mediaFiles.some((mf) => mf.id === f.id || mf.filename === f.filename),
           )
           return [...optimisticFiles, ...mediaFiles]
         })
@@ -141,8 +145,9 @@ export function FilesPage({ userId }: FilesPageProps) {
         await res.json()
 
         // Remove optimistic entry and fetch fresh data from server
+        // Use setTimeout to ensure state update processes before fetch
         setFiles((prev) => prev.filter((f) => f.id !== tempId))
-        fetchFiles()
+        setTimeout(() => fetchFiles(), 0)
 
         onProgress(file, 100)
         onSuccess(file)
