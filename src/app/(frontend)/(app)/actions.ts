@@ -52,8 +52,10 @@ export async function uploadFile(
     return { success: false, error: 'Unauthorized' }
   }
 
-  const id = formData.get('id') as string | null
+  const id = formData.get('id') as string | undefined
   const file = formData.get('file') as File | null
+  const createdAt = formData.get('createdAt') as string | undefined
+
   if (!file) {
     return { success: false, error: 'No file provided' }
   }
@@ -63,7 +65,8 @@ export async function uploadFile(
     await payload.create({
       collection: 'media',
       data: {
-        id: id || undefined,
+        id,
+        createdAt,
         user: user.id,
         status: 'pending',
       },

@@ -58,43 +58,57 @@ export function FilesPage({ files = [] }: FilesPageProps) {
       onError: (file: File, error: Error) => void
     },
   ) {
-    for (const file of uploadFiles) {
-      console.log('uploading file', file.name)
+    await Promise.all(
+      uploadFiles.map(async (file) => {
+        const id = new ObjectId().toHexString()
 
-      const id = new ObjectId().toHexString()
+        // Add temp card immediately with same ID that will be used server-side
+        setCurrentFiles((prev) => [
+          ...prev,
+          {
+            id,
+            filename: file.name,
+            filesize: file.size,
+            status: 'pending',
+            createdAt: '',
+            updatedAt: '',
+            user: '',
+          },
+        ])
 
-      // Add temp card immediately with same ID that will be used server-side
-      setCurrentFiles((prev) => [
-        ...prev,
-        { id, filename: file.name, filesize: file.size, status: 'pending', createdAt: '', updatedAt: '', user: '' },
-      ])
+        const formData = new FormData()
+        formData.append('id', id)
+        formData.append('file', file)
+        formData.append('createdAt', Date.now().toString())
 
-      const formData = new FormData()
-      formData.append('id', id)
-      formData.append('file', file)
+        const result = await uploadFile(formData)
 
+        if (result.success) {
+          onSuccess(file)
+          router.refresh()
+        } else {
+          // Remove temp card on error
+          setCurrentFiles((prev) => prev.filter((f) => f.id !== id))
+          onError(file, new Error(result.error || 'Upload failed'))
+        }
+      }),
+    )
 
-      const result = await uploadFile(formData)
-
-      if (result.success) {
-        onSuccess(file)
-        router.refresh()
-      } else {
-        // Remove temp card on error
-        setCurrentFiles((prev) => prev.filter((f) => f.id !== id))
-        onError(file, new Error(result.error || 'Upload failed'))
-      }
-    }
+    router.refresh()
   }
 
   async function handleDelete(fileId: string) {
     setCurrentFiles((prev) => {
-      const file = prev.find((f) => f.id === fileId)
-      if (!file) return prev
-      file.status = 'deleting' as any;
-      return [...prev.filter((f) => f.id !== fileId), file]
+      const files = [...prev]
+
+      const file = files.find((f) => f.id === fileId)
+      if (!file) return files
+      file.status = 'deleting' as any
+      return files
     })
+
     const result = await deleteFile(fileId)
+
     if (result.success) {
       router.refresh()
     }

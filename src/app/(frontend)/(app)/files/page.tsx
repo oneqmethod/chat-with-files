@@ -15,7 +15,6 @@ export default async function Files() {
   const { docs: files } = await payload.find({
     collection: 'media',
     where: { user: { equals: user.id } },
-    sort: '-createdAt',
     limit: 100,
   })
 
