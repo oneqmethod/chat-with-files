@@ -41,12 +41,9 @@ export function FilesPage({ userId }: FilesPageProps) {
           status: doc.status as FileStatus,
         }))
         setFiles((prev) => {
-          // Keep optimistic files that haven't been confirmed yet
-          // Dedupe by both id AND filename to handle race conditions
+          // Keep optimistic files not yet on server (by id only)
           const optimisticFiles = prev.filter(
-            (f) =>
-              f.isOptimistic &&
-              !mediaFiles.some((mf) => mf.id === f.id || mf.filename === f.filename),
+            (f) => f.isOptimistic && !mediaFiles.some((mf) => mf.id === f.id),
           )
           return [...optimisticFiles, ...mediaFiles]
         })
@@ -141,22 +138,11 @@ export function FilesPage({ userId }: FilesPageProps) {
           throw new Error(data.error || 'Upload failed')
         }
 
-        const data = await res.json()
+        await res.json()
 
-        // Replace optimistic entry with real one
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === tempId
-              ? {
-                  id: data.id,
-                  filename: data.filename,
-                  filesize: data.filesize,
-                  status: 'pending' as FileStatus,
-                  isOptimistic: false,
-                }
-              : f,
-          ),
-        )
+        // Remove optimistic entry and fetch fresh data from server
+        setFiles((prev) => prev.filter((f) => f.id !== tempId))
+        fetchFiles()
 
         onProgress(file, 100)
         onSuccess(file)
