@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { FilesPage } from '@/components/files-page'
+import { FilesPage } from '@/app/(frontend)/(app)/files/files-page'
 
 export default async function Files() {
   const payload = await getPayload({ config })

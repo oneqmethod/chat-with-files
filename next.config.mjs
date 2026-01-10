@@ -5,6 +5,11 @@ const nextConfig = {
   // Empty turbopack config for Payload CMS compatibility
   turbopack: {},
 
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '150mb',
+    },
+  },
   // Webpack config kept as fallback (use --webpack flag if needed)
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {

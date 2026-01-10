@@ -53,6 +53,7 @@ export async function deleteFromStore(documentId: string): Promise<void> {
   const ai = getGeminiClient()
   await ai.fileSearchStores.documents.delete({
     name: documentId,
+    config: { force: true },
   })
 }
 

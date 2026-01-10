@@ -72,7 +72,6 @@ export default buildConfig({
             data: { status: 'ready', geminiDocumentId: geminiDocId },
           })
 
-          revalidatePath('/(frontend)/(app)')
           return { output: { success: true } }
         },
         onFail: async ({ input, req }) => {
