@@ -13,16 +13,25 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect('/login')
   }
 
-  const chats = await payload.find({
-    collection: 'chats',
-    where: { user: { equals: user.id } },
-    sort: '-updatedAt',
-    limit: 50,
-  })
+  const [chats, files] = await Promise.all([
+    payload.find({
+      collection: 'chats',
+      where: { user: { equals: user.id } },
+      sort: '-updatedAt',
+      limit: 50,
+    }),
+    payload.find({
+      collection: 'media',
+      where: { user: { equals: user.id }, status: { equals: 'ready' } },
+      limit: 1,
+    }),
+  ])
+
+  const hasReadyFiles = files.totalDocs > 0
 
   return (
     <SidebarProvider>
-      <ChatsSidebar user={user} chats={chats.docs} />
+      <ChatsSidebar user={user} chats={chats.docs} hasReadyFiles={hasReadyFiles} />
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-12 items-center border-b bg-background px-4">
           <SidebarTrigger />

@@ -2,9 +2,10 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { MessageSquare, Files, Plus, Upload } from 'lucide-react'
+import { MessageSquare, Files, Plus, Upload, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export default async function DashboardPage() {
   const payload = await getPayload({ config })
@@ -71,13 +72,30 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {fileStats.ready === 0 && (
+        <Alert className="mb-8">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>No files ready</AlertTitle>
+          <AlertDescription>
+            Upload and wait for files to be processed before starting a chat.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="mb-8 flex gap-4">
-        <Button asChild>
-          <Link href="/chat/new">
+        {fileStats.ready > 0 ? (
+          <Button asChild>
+            <Link href="/chat/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Chat
+            </Link>
+          </Button>
+        ) : (
+          <Button disabled>
             <Plus className="mr-2 h-4 w-4" />
             New Chat
-          </Link>
-        </Button>
+          </Button>
+        )}
         <Button variant="outline" asChild>
           <Link href="/files">
             <Upload className="mr-2 h-4 w-4" />

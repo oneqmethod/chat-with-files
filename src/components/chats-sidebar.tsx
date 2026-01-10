@@ -56,11 +56,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { Chat, User } from '@/payload-types'
 
 interface ChatsSidebarProps {
   user: User
   chats: Chat[]
+  hasReadyFiles: boolean
 }
 
 const navItems = [
@@ -68,7 +70,7 @@ const navItems = [
   { title: 'Files', href: '/files', icon: Files },
 ]
 
-export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
+export function ChatsSidebar({ user, chats, hasReadyFiles }: ChatsSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
@@ -127,12 +129,28 @@ export function ChatsSidebar({ user, chats }: ChatsSidebarProps) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Chats</SidebarGroupLabel>
-          <SidebarGroupAction title="New Chat">
-            <Link href={`/chat/new`}>
-              <Plus className="size-4" />
-              <span className="sr-only">New Chat</span>
-            </Link>
-          </SidebarGroupAction>
+          {hasReadyFiles ? (
+            <SidebarGroupAction title="New Chat" asChild>
+              <Link href="/chat/new">
+                <Plus className="size-4" />
+                <span className="sr-only">New Chat</span>
+              </Link>
+            </SidebarGroupAction>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SidebarGroupAction
+                  title="New Chat"
+                  className="cursor-not-allowed opacity-50"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <Plus className="size-4" />
+                  <span className="sr-only">New Chat</span>
+                </SidebarGroupAction>
+              </TooltipTrigger>
+              <TooltipContent side="right">Upload files first</TooltipContent>
+            </Tooltip>
+          )}
           <SidebarGroupContent>
             <SidebarMenu>
               {chats.map((chat) => (
