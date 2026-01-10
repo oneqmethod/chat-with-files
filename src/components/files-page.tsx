@@ -104,49 +104,51 @@ export function FilesPage({ userId: _userId }: FilesPageProps) {
     },
   ) {
     for (const file of uploadFiles) {
-      // Add optimistic entry - will auto-revert when files state updates
-      startTransition(() => {
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+      // Wrap entire upload in transition to keep optimistic state visible
+      startTransition(async () => {
+        // Add optimistic entry
         addOptimisticFile({
-          id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          id: tempId,
           filename: file.name,
           filesize: file.size,
           status: 'pending',
         })
-      })
 
-      try {
-        onProgress(file, 10)
+        try {
+          onProgress(file, 10)
 
-        const formData = new FormData()
-        formData.append('file', file)
+          const formData = new FormData()
+          formData.append('file', file)
 
-        onProgress(file, 30)
+          onProgress(file, 30)
 
-        const res = await fetch('/api/files/upload', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-        })
+          const res = await fetch('/api/files/upload', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+          })
 
-        onProgress(file, 70)
+          onProgress(file, 70)
 
-        if (!res.ok) {
-          const data = await res.json()
-          throw new Error(data.error || 'Upload failed')
+          if (!res.ok) {
+            const data = await res.json()
+            throw new Error(data.error || 'Upload failed')
+          }
+
+          await res.json()
+
+          // Fetch fresh data - optimistic state reverts when transition ends
+          await fetchFiles()
+
+          onProgress(file, 100)
+          onSuccess(file)
+        } catch (error) {
+          await fetchFiles()
+          onError(file, error instanceof Error ? error : new Error('Upload failed'))
         }
-
-        await res.json()
-
-        // Fetch fresh data - optimistic state auto-reverts
-        await fetchFiles()
-
-        onProgress(file, 100)
-        onSuccess(file)
-      } catch (error) {
-        // Fetch to revert optimistic state
-        await fetchFiles()
-        onError(file, error instanceof Error ? error : new Error('Upload failed'))
-      }
+      })
     }
   }
 
