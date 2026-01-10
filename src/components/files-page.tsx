@@ -175,7 +175,10 @@ export function FilesPage({ userId }: FilesPageProps) {
         credentials: 'include',
       })
 
-      if (!res.ok) {
+      if (res.ok) {
+        // Refresh server components to update sidebar
+        router.refresh()
+      } else {
         // Restore on failure
         fetchFiles()
       }

@@ -139,14 +139,14 @@ export function ChatsSidebar({ user, chats, hasReadyFiles }: ChatsSidebarProps) 
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
-                <SidebarGroupAction
-                  title="New Chat"
-                  className="cursor-not-allowed opacity-50"
+                <button
+                  type="button"
+                  className="text-sidebar-foreground ring-sidebar-ring absolute right-3 top-3.5 flex aspect-square w-5 cursor-not-allowed items-center justify-center rounded-md p-0 opacity-50 outline-hidden [&>svg]:size-4 [&>svg]:shrink-0"
                   onClick={(e) => e.preventDefault()}
+                  aria-label="New Chat"
                 >
                   <Plus className="size-4" />
-                  <span className="sr-only">New Chat</span>
-                </SidebarGroupAction>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="right">Upload files first</TooltipContent>
             </Tooltip>
