@@ -41,3 +41,65 @@ export async function logout(): Promise<never> {
   cookieStore.delete('payload-token')
   redirect('/login')
 }
+
+export async function uploadFile(
+  formData: FormData,
+): Promise<{ success: boolean; error?: string }> {
+  const payload = await getPayload({ config })
+  const { user } = await payload.auth({ headers: await headers() })
+
+  if (!user) {
+    return { success: false, error: 'Unauthorized' }
+  }
+
+  const file = formData.get('file') as File | null
+  if (!file) {
+    return { success: false, error: 'No file provided' }
+  }
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer())
+    await payload.create({
+      collection: 'media',
+      data: {
+        user: user.id,
+        status: 'pending',
+      },
+      file: {
+        data: buffer,
+        name: file.name,
+        mimetype: file.type,
+        size: file.size,
+      },
+    })
+
+    revalidatePath('/files')
+    return { success: true }
+  } catch (error) {
+    console.error('Upload failed:', error)
+    return { success: false, error: 'Upload failed' }
+  }
+}
+
+export async function deleteFile(fileId: string): Promise<{ success: boolean; error?: string }> {
+  const payload = await getPayload({ config })
+  const { user } = await payload.auth({ headers: await headers() })
+
+  if (!user) {
+    return { success: false, error: 'Unauthorized' }
+  }
+
+  try {
+    const media = await payload.findByID({ collection: 'media', id: fileId })
+    if ((media.user as { id: string })?.id !== user.id) {
+      return { success: false, error: 'Forbidden' }
+    }
+
+    await payload.delete({ collection: 'media', id: fileId })
+    revalidatePath('/files')
+    return { success: true }
+  } catch (error) {
+    console.error('Delete failed:', error)
+    return { success: false, error: 'Delete failed' }
+  }
+}

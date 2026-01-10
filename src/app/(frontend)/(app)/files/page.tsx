@@ -12,5 +12,12 @@ export default async function Files() {
     redirect('/login')
   }
 
-  return <FilesPage userId={user.id} />
+  const { docs: files } = await payload.find({
+    collection: 'media',
+    where: { user: { equals: user.id } },
+    sort: '-createdAt',
+    limit: 100,
+  })
+
+  return <FilesPage files={files} />
 }
