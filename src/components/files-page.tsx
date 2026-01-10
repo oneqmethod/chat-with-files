@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useOptimistic, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, X, Check, Loader2, AlertCircle, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -15,19 +15,24 @@ interface FileItem {
   filename: string | null
   filesize: number | null
   status: FileStatus
-  isOptimistic?: boolean
 }
 
 interface FilesPageProps {
   userId: string
 }
 
-export function FilesPage({ userId }: FilesPageProps) {
+export function FilesPage({ userId: _userId }: FilesPageProps) {
   const router = useRouter()
   const [files, setFiles] = useState<FileItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const [isPending, startTransition] = useTransition()
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const prevReadyCountRef = useRef<number>(0)
+
+  // Optimistic state - automatically reverts when `files` changes
+  const [optimisticFiles, addOptimisticFile] = useOptimistic(files, (state, newFile: FileItem) => [
+    newFile,
+    ...state,
+  ])
 
   const fetchFiles = useCallback(async () => {
     try {
@@ -40,27 +45,18 @@ export function FilesPage({ userId }: FilesPageProps) {
           filesize: doc.filesize,
           status: doc.status as FileStatus,
         }))
-        setFiles((prev) => {
-          // Keep optimistic files not yet on server
-          // Filter by both id AND filename - if server has a file with same filename,
-          // the upload completed and we should use server's version
-          const optimisticFiles = prev.filter(
-            (f) =>
-              f.isOptimistic &&
-              !mediaFiles.some((mf) => mf.id === f.id || mf.filename === f.filename),
-          )
-          return [...optimisticFiles, ...mediaFiles]
-        })
+        setFiles(mediaFiles)
       }
     } catch (error) {
       console.error('Failed to fetch files:', error)
-    } finally {
-      setLoading(false)
     }
   }, [])
 
+  // Initial fetch with transition
   useEffect(() => {
-    fetchFiles()
+    startTransition(() => {
+      fetchFiles()
+    })
   }, [fetchFiles])
 
   // Refresh server components when ready count changes
@@ -108,18 +104,13 @@ export function FilesPage({ userId }: FilesPageProps) {
     },
   ) {
     for (const file of uploadFiles) {
-      // Add optimistic entry immediately
-      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`
-      setFiles((prev) => [
-        {
-          id: tempId,
-          filename: file.name,
-          filesize: file.size,
-          status: 'pending',
-          isOptimistic: true,
-        },
-        ...prev,
-      ])
+      // Add optimistic entry - will auto-revert when files state updates
+      addOptimisticFile({
+        id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        filename: file.name,
+        filesize: file.size,
+        status: 'pending',
+      })
 
       try {
         onProgress(file, 10)
@@ -144,23 +135,21 @@ export function FilesPage({ userId }: FilesPageProps) {
 
         await res.json()
 
-        // Remove optimistic entry and fetch fresh data from server
-        // Use setTimeout to ensure state update processes before fetch
-        setFiles((prev) => prev.filter((f) => f.id !== tempId))
-        setTimeout(() => fetchFiles(), 0)
+        // Fetch fresh data - optimistic state auto-reverts
+        await fetchFiles()
 
         onProgress(file, 100)
         onSuccess(file)
       } catch (error) {
-        // Remove optimistic entry on error
-        setFiles((prev) => prev.filter((f) => f.id !== tempId))
+        // Fetch to revert optimistic state
+        await fetchFiles()
         onError(file, error instanceof Error ? error : new Error('Upload failed'))
       }
     }
   }
 
   async function handleDelete(fileId: string) {
-    // Optimistic delete
+    // Optimistic delete - filter from current files
     setFiles((prev) => prev.filter((f) => f.id !== fileId))
 
     try {
@@ -170,15 +159,14 @@ export function FilesPage({ userId }: FilesPageProps) {
       })
 
       if (res.ok) {
-        // Refresh server components to update sidebar
         router.refresh()
       } else {
         // Restore on failure
-        fetchFiles()
+        await fetchFiles()
       }
     } catch (error) {
       console.error('Failed to delete file:', error)
-      fetchFiles()
+      await fetchFiles()
     }
   }
 
@@ -220,11 +208,11 @@ export function FilesPage({ userId }: FilesPageProps) {
         </FileUpload>
       </div>
 
-      {loading ? (
+      {isPending ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : files.length === 0 ? (
+      ) : optimisticFiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">No files uploaded yet</p>
@@ -232,7 +220,7 @@ export function FilesPage({ userId }: FilesPageProps) {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {files.map((file) => (
+          {optimisticFiles.map((file) => (
             <Card key={file.id} className="group relative">
               <CardContent className="flex items-start gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">
@@ -260,7 +248,7 @@ export function FilesPage({ userId }: FilesPageProps) {
                   size="icon"
                   className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
                   onClick={() => handleDelete(file.id)}
-                  disabled={file.isOptimistic}
+                  disabled={file.id.startsWith('temp-')}
                 >
                   <X className="h-4 w-4" />
                 </Button>
