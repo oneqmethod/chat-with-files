@@ -105,11 +105,13 @@ export function FilesPage({ userId: _userId }: FilesPageProps) {
   ) {
     for (const file of uploadFiles) {
       // Add optimistic entry - will auto-revert when files state updates
-      addOptimisticFile({
-        id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        filename: file.name,
-        filesize: file.size,
-        status: 'pending',
+      startTransition(() => {
+        addOptimisticFile({
+          id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          filename: file.name,
+          filesize: file.size,
+          status: 'pending',
+        })
       })
 
       try {
