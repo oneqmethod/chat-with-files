@@ -43,7 +43,6 @@ export async function POST(request: NextRequest) {
     currentChatId = chat.id
   }
 
-  // Extract text from last user message (UIMessage format has parts array)
   const lastUserMessage = messages.findLast((m: UIMessage) => m.role === 'user')
   const lastUserText = lastUserMessage?.parts
     ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
@@ -61,7 +60,6 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  // Convert UI messages to model format for streamText
   const modelMessages = await convertToModelMessages(messages)
 
   const result = streamText({
@@ -120,10 +118,8 @@ If the user didn't uploaded files answer "You need to upload files first".`,
     },
   })
 
-  // Use createUIMessageStream to send chat ID as data part before AI response
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
-      // Send chat ID as data part (only for new chats)
       if (!chatId) {
         writer.write({
           type: 'data-chat-id',
@@ -131,7 +127,6 @@ If the user didn't uploaded files answer "You need to upload files first".`,
           data: { chatId: currentChatId },
         })
       }
-      // Merge the AI response stream
       writer.merge(
         result.toUIMessageStream({
           sendSources: true,

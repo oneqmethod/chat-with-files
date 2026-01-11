@@ -1,36 +1,25 @@
 'use server'
 
-import { cookies, headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { getPayload } from 'payload'
-import config from '@payload-config'
+import { getAuthenticatedUser, verifyOwnership } from '@/lib/server'
 
-export async function deleteChat(chatId: string) {
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers: await headers() })
-
-  if (!user) throw new Error('Unauthorized')
+export async function deleteChat(chatId: string): Promise<void> {
+  const { payload, user } = await getAuthenticatedUser()
 
   const chat = await payload.findByID({ collection: 'chats', id: chatId })
-  if ((chat.user as { id: string })?.id !== user.id) {
-    throw new Error('Forbidden')
-  }
+  verifyOwnership(chat, user.id)
 
   await payload.delete({ collection: 'chats', id: chatId })
   revalidatePath('/chat')
 }
 
-export async function renameChat(chatId: string, newTitle: string) {
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers: await headers() })
-
-  if (!user) throw new Error('Unauthorized')
+export async function renameChat(chatId: string, newTitle: string): Promise<void> {
+  const { payload, user } = await getAuthenticatedUser()
 
   const chat = await payload.findByID({ collection: 'chats', id: chatId })
-  if ((chat.user as { id: string })?.id !== user.id) {
-    throw new Error('Forbidden')
-  }
+  verifyOwnership(chat, user.id)
 
   await payload.update({ collection: 'chats', id: chatId, data: { title: newTitle } })
   revalidatePath('/chat')
@@ -45,12 +34,7 @@ export async function logout(): Promise<never> {
 export async function uploadFile(
   formData: FormData,
 ): Promise<{ success: boolean; error?: string }> {
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers: await headers() })
-
-  if (!user) {
-    return { success: false, error: 'Unauthorized' }
-  }
+  const { payload, user } = await getAuthenticatedUser()
 
   const id = formData.get('id') as string | undefined
   const file = formData.get('file') as File | null
@@ -87,18 +71,11 @@ export async function uploadFile(
 }
 
 export async function deleteFile(fileId: string): Promise<{ success: boolean; error?: string }> {
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers: await headers() })
-
-  if (!user) {
-    return { success: false, error: 'Unauthorized' }
-  }
+  const { payload, user } = await getAuthenticatedUser()
 
   try {
     const media = await payload.findByID({ collection: 'media', id: fileId })
-    if ((media.user as { id: string })?.id !== user.id) {
-      return { success: false, error: 'Forbidden' }
-    }
+    verifyOwnership(media, user.id)
 
     await payload.delete({ collection: 'media', id: fileId })
     revalidatePath('/files')

@@ -1,29 +1,18 @@
-import { headers } from 'next/headers'
 import Link from 'next/link'
-import { getPayload } from 'payload'
-import config from '@payload-config'
 import { MessageSquare, Files, Plus, Upload, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { getOptionalUser, getUserChats, getUserFiles } from '@/lib/server'
 
 export default async function DashboardPage() {
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers: await headers() })
+  const { payload, user } = await getOptionalUser()
 
   if (!user) return null
 
   const [chats, files] = await Promise.all([
-    payload.find({
-      collection: 'chats',
-      where: { user: { equals: user.id } },
-      sort: '-updatedAt',
-      limit: 5,
-    }),
-    payload.find({
-      collection: 'media',
-      where: { user: { equals: user.id } },
-    }),
+    getUserChats(payload, user.id, 5),
+    getUserFiles(payload, user.id),
   ])
 
   const fileStats = {

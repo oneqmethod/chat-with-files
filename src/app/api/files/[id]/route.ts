@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { getUserIdFromResource } from '@/lib/server'
 
 export async function DELETE(
   request: NextRequest,
@@ -27,12 +28,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
-    const mediaUserId = typeof media.user === 'string' ? media.user : media.user.id
-    if (mediaUserId !== user.id) {
+    if (getUserIdFromResource(media) !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // beforeDelete hook handles Google cleanup
     await payload.delete({
       collection: 'media',
       id,

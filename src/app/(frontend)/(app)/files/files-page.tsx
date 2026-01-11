@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { FileUpload, FileUploadDropzone } from '@/components/ui/file-upload'
 import { uploadFile, deleteFile } from '@/app/(frontend)/(app)/actions'
+import { formatFileSize } from '@/lib/format'
 import type { Media } from '@/payload-types'
 
 const ACCEPTED_FILE_TYPES = '.pdf,.txt,.md,.doc,.docx'
@@ -23,13 +24,6 @@ interface PendingFile {
   file: File
   status: 'pending' | 'uploading' | 'error'
   error?: string
-}
-
-function formatFileSize(bytes: number | null | undefined): string {
-  if (!bytes) return ''
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function getStatusIcon(status: Media['status'] | 'deleting' = 'pending') {

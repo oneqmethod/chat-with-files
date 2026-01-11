@@ -3,11 +3,12 @@
 import { Button } from '@/components/ui/button'
 import { ButtonGroup, ButtonGroupText } from '@/components/ui/button-group'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { createContextWithHook } from '@/lib/create-context'
 import { cn } from '@/lib/utils'
 import type { FileUIPart, UIMessage } from 'ai'
 import { ChevronLeftIcon, ChevronRightIcon, PaperclipIcon, XIcon } from 'lucide-react'
 import type { ComponentProps, HTMLAttributes, ReactElement } from 'react'
-import { createContext, memo, useContext, useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { Streamdown } from 'streamdown'
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
@@ -94,17 +95,8 @@ type MessageBranchContextType = {
   setBranches: (branches: ReactElement[]) => void
 }
 
-const MessageBranchContext = createContext<MessageBranchContextType | null>(null)
-
-const useMessageBranch = () => {
-  const context = useContext(MessageBranchContext)
-
-  if (!context) {
-    throw new Error('MessageBranch components must be used within MessageBranch')
-  }
-
-  return context
-}
+const [MessageBranchContext, useMessageBranch] =
+  createContextWithHook<MessageBranchContextType>('MessageBranch')
 
 export type MessageBranchProps = HTMLAttributes<HTMLDivElement> & {
   defaultBranch?: number

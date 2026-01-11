@@ -3,25 +3,19 @@
 import { useControllableState } from '@radix-ui/react-use-controllable-state'
 import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { createContextWithHook } from '@/lib/create-context'
 import { cn } from '@/lib/utils'
 import { BrainIcon, ChevronDownIcon, DotIcon, type LucideIcon } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
-import { createContext, memo, useContext, useMemo } from 'react'
+import { memo, useMemo } from 'react'
 
 type ChainOfThoughtContextValue = {
   isOpen: boolean
   setIsOpen: (open: boolean) => void
 }
 
-const ChainOfThoughtContext = createContext<ChainOfThoughtContextValue | null>(null)
-
-const useChainOfThought = () => {
-  const context = useContext(ChainOfThoughtContext)
-  if (!context) {
-    throw new Error('ChainOfThought components must be used within ChainOfThought')
-  }
-  return context
-}
+const [ChainOfThoughtContext, useChainOfThought] =
+  createContextWithHook<ChainOfThoughtContextValue>('ChainOfThought')
 
 export type ChainOfThoughtProps = ComponentProps<'div'> & {
   open?: boolean
