@@ -2,10 +2,11 @@
 
 import { useControllableState } from '@radix-ui/react-use-controllable-state'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { createContextWithHook } from '@/lib/create-context'
 import { cn } from '@/lib/utils'
 import { BrainIcon, ChevronDownIcon } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
-import { createContext, memo, useContext, useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { Streamdown } from 'streamdown'
 import { Shimmer } from './shimmer'
 
@@ -16,15 +17,9 @@ type ReasoningContextValue = {
   duration: number | undefined
 }
 
-const ReasoningContext = createContext<ReasoningContextValue | null>(null)
+const [ReasoningContext, useReasoning] = createContextWithHook<ReasoningContextValue>('Reasoning')
 
-export const useReasoning = () => {
-  const context = useContext(ReasoningContext)
-  if (!context) {
-    throw new Error('Reasoning components must be used within Reasoning')
-  }
-  return context
-}
+export { useReasoning }
 
 export type ReasoningProps = ComponentProps<typeof Collapsible> & {
   isStreaming?: boolean
