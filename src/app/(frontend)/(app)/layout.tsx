@@ -1,33 +1,19 @@
-import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getPayload } from 'payload'
-import config from '@payload-config'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { ChatsSidebar } from '@/components/chats-sidebar'
+import { getOptionalUser, getUserChats, userHasReadyFiles } from '@/lib/server'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers: await headers() })
+  const { payload, user } = await getOptionalUser()
 
   if (!user) {
     redirect('/login')
   }
 
-  const [chats, files] = await Promise.all([
-    payload.find({
-      collection: 'chats',
-      where: { user: { equals: user.id } },
-      sort: '-updatedAt',
-      limit: 50,
-    }),
-    payload.find({
-      collection: 'media',
-      where: { user: { equals: user.id }, status: { equals: 'ready' } },
-      limit: 1,
-    }),
+  const [chats, hasReadyFiles] = await Promise.all([
+    getUserChats(payload, user.id),
+    userHasReadyFiles(payload, user.id),
   ])
-
-  const hasReadyFiles = files.totalDocs > 0
 
   return (
     <SidebarProvider>

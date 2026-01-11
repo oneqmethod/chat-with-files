@@ -1,10 +1,8 @@
-import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getPayload } from 'payload'
-import config from '@payload-config'
 import type { UIMessage } from '@ai-sdk/react'
-import type { Message as DbMessage } from '@/payload-types'
+import type { Message } from '@/payload-types'
 import { ChatClient } from './ChatClient'
+import { getOptionalUser, getChatMessages, userHasReadyFiles } from '@/lib/server'
 
 type SourceUrlPart = {
   type: 'source-url'
@@ -21,7 +19,7 @@ type SourceDocumentPart = {
   filename?: string
 }
 
-function transformDbMessages(docs: DbMessage[]): UIMessage[] {
+function transformDbMessages(docs: Message[]): UIMessage[] {
   return docs.map((msg) => {
     const parts: Array<{ type: 'text'; text: string } | SourceUrlPart | SourceDocumentPart> = [
       { type: 'text' as const, text: msg.content },
@@ -65,22 +63,14 @@ export default async function ChatPage({ params }: PageProps) {
   const isNewChat = id === 'new'
   const chatId = isNewChat ? null : id
 
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers: await headers() })
+  const { payload, user } = await getOptionalUser()
 
   if (!user) {
     redirect('/login')
   }
 
-  // Check if user has any ready files
-  const files = await payload.find({
-    collection: 'media',
-    where: { user: { equals: user.id }, status: { equals: 'ready' } },
-    limit: 1,
-  })
-  const hasFiles = files.totalDocs > 0
+  const hasFiles = await userHasReadyFiles(payload, user.id)
 
-  // Block new chats if no files are ready
   if (isNewChat && !hasFiles) {
     redirect('/files')
   }
@@ -88,13 +78,7 @@ export default async function ChatPage({ params }: PageProps) {
   let initialMessages: UIMessage[] = []
 
   if (!isNewChat && chatId) {
-    const { docs } = await payload.find({
-      collection: 'messages',
-      where: { chat: { equals: chatId } },
-      sort: 'createdAt',
-      depth: 0,
-    })
-
+    const { docs } = await getChatMessages(payload, chatId)
     initialMessages = transformDbMessages(docs)
   }
 
