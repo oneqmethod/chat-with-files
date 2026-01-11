@@ -1,38 +1,6 @@
-import type {
-  CollectionConfig,
-  CollectionAfterChangeHook,
-  CollectionBeforeDeleteHook,
-} from 'payload'
-import { deleteFromStore } from '@/lib/gemini'
+import type { CollectionConfig } from 'payload'
 import { isAdminOrOwner } from '@/lib/access'
-
-const queueGoogleUpload: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
-  if (operation !== 'create' || !doc.filename || !doc.user) return doc
-
-  await req.payload.jobs.queue({
-    task: 'uploadToGoogle',
-    input: {
-      mediaId: doc.id,
-      userId: typeof doc.user === 'string' ? doc.user : doc.user.id,
-    },
-  })
-
-  // Run queued jobs immediately instead of waiting for autoRun
-  await req.payload.jobs.run()
-
-  return doc
-}
-
-const deleteFromGoogle: CollectionBeforeDeleteHook = async ({ req, id }) => {
-  const doc = await req.payload.findByID({ collection: 'media', id })
-  if (doc?.geminiDocumentId) {
-    try {
-      await deleteFromStore(doc.geminiDocumentId)
-    } catch (e) {
-      req.payload.logger.error(`Failed to delete from Google: ${e}`)
-    }
-  }
-}
+import { queueGoogleUpload, deleteFromGoogle } from './hooks/media'
 
 export const Media: CollectionConfig = {
   slug: 'media',
