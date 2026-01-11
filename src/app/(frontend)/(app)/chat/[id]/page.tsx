@@ -72,16 +72,17 @@ export default async function ChatPage({ params }: PageProps) {
     redirect('/login')
   }
 
+  // Check if user has any ready files
+  const files = await payload.find({
+    collection: 'media',
+    where: { user: { equals: user.id }, status: { equals: 'ready' } },
+    limit: 1,
+  })
+  const hasFiles = files.totalDocs > 0
+
   // Block new chats if no files are ready
-  if (isNewChat) {
-    const files = await payload.find({
-      collection: 'media',
-      where: { user: { equals: user.id }, status: { equals: 'ready' } },
-      limit: 1,
-    })
-    if (files.totalDocs === 0) {
-      redirect('/files')
-    }
+  if (isNewChat && !hasFiles) {
+    redirect('/files')
   }
 
   let initialMessages: UIMessage[] = []
@@ -97,5 +98,5 @@ export default async function ChatPage({ params }: PageProps) {
     initialMessages = transformDbMessages(docs)
   }
 
-  return <ChatClient initialMessages={initialMessages} chatId={chatId} />
+  return <ChatClient initialMessages={initialMessages} chatId={chatId} hasFiles={hasFiles} />
 }

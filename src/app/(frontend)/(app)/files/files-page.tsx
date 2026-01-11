@@ -6,6 +6,7 @@ import { ObjectId } from 'bson'
 import { Upload, X, Check, Loader2, AlertCircle, FileText, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { FileUpload, FileUploadDropzone } from '@/components/ui/file-upload'
 import { uploadFile, deleteFile } from '@/app/(frontend)/(app)/actions'
 import type { Media } from '@/payload-types'
@@ -229,11 +230,15 @@ export function FilesPage({ files = [] }: FilesPageProps) {
 
       {/* Uploaded files grid */}
       {currentFiles.length === 0 && pendingFiles.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
-          <p className="text-muted-foreground">No files uploaded yet</p>
-          <p className="text-sm text-muted-foreground">Upload documents to chat with them</p>
-        </div>
+        <Empty className="py-12">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FileText />
+            </EmptyMedia>
+            <EmptyTitle>No files uploaded</EmptyTitle>
+            <EmptyDescription>Upload documents to chat with them</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : currentFiles.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {currentFiles.map((file) => (

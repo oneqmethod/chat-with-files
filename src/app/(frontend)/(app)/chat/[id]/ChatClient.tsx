@@ -37,9 +37,12 @@ import {
 } from '@/components/ai-elements/inline-citation'
 import { HoverCardTrigger } from '@/components/ui/hover-card'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Loader } from '@/components/ai-elements/loader'
-import { MessageSquare } from 'lucide-react'
+import { FileWarning, MessageSquare } from 'lucide-react'
 
 type SourceUrlPart = {
   type: 'source-url'
@@ -66,9 +69,10 @@ type ReasoningPart = {
 interface ChatClientProps {
   initialMessages: UIMessage[]
   chatId: string | null
+  hasFiles: boolean
 }
 
-export function ChatClient({ initialMessages, chatId }: ChatClientProps) {
+export function ChatClient({ initialMessages, chatId, hasFiles }: ChatClientProps) {
   const router = useRouter()
   const [inputValue, setInputValue] = useState('')
   const [actualChatId, setActualChatId] = useState<string | null>(chatId)
@@ -221,6 +225,18 @@ export function ChatClient({ initialMessages, chatId }: ChatClientProps) {
       </Conversation>
 
       <div className="border-t bg-background p-4">
+        {!hasFiles && (
+          <Alert className="mb-4">
+            <FileWarning className="h-4 w-4" />
+            <AlertTitle>No files available</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <span>Upload files to continue chatting</span>
+              <Button asChild size="sm">
+                <Link href="/files">Upload Files</Link>
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         <PromptInput globalDrop multiple onSubmit={handleSubmit}>
           <PromptInputAttachments>
             {(attachment) => <PromptInputAttachment data={attachment} />}
@@ -230,7 +246,8 @@ export function ChatClient({ initialMessages, chatId }: ChatClientProps) {
               ref={textareaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask about your files..."
+              placeholder={hasFiles ? 'Ask about your files...' : 'Upload files to chat...'}
+              disabled={!hasFiles}
             />
           </PromptInputBody>
           <PromptInputFooter>
@@ -243,7 +260,7 @@ export function ChatClient({ initialMessages, chatId }: ChatClientProps) {
               </PromptInputActionMenu>
               <PromptInputSpeechButton textareaRef={textareaRef} />
             </PromptInputTools>
-            <PromptInputSubmit status={status} />
+            <PromptInputSubmit status={status} disabled={!hasFiles} />
           </PromptInputFooter>
         </PromptInput>
       </div>
