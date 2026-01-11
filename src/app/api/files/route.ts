@@ -17,9 +17,7 @@ export async function GET(request: NextRequest) {
   try {
     const result = await payload.find({
       collection: 'media',
-      where: {
-        user: { equals: user.id },
-      },
+      where: { user: { equals: user.id } },
       limit,
       sort: '-createdAt',
     })
