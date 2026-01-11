@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ObjectId } from 'bson'
-import { Upload, X, Check, Loader2, AlertCircle, FileText } from 'lucide-react'
+import { Upload, X, Check, Loader2, AlertCircle, FileText, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { FileUpload, FileUploadDropzone } from '@/components/ui/file-upload'
@@ -15,6 +15,13 @@ const ACCEPTED_FILE_TYPES_DISPLAY = 'PDF, TXT, MD, DOC, DOCX'
 
 interface FilesPageProps {
   files: Media[]
+}
+
+interface PendingFile {
+  id: string
+  file: File
+  status: 'pending' | 'uploading' | 'error'
+  error?: string
 }
 
 function formatFileSize(bytes: number | null | undefined): string {
@@ -42,58 +49,77 @@ function getStatusIcon(status: Media['status'] | 'deleting' = 'pending') {
 export function FilesPage({ files = [] }: FilesPageProps) {
   const router = useRouter()
   const [currentFiles, setCurrentFiles] = useState<Media[]>([])
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     setCurrentFiles(files)
   }, [files])
 
-  async function handleUpload(
-    uploadFiles: File[],
-    {
-      onSuccess,
-      onError,
-    }: {
-      onProgress: (file: File, progress: number) => void
-      onSuccess: (file: File) => void
-      onError: (file: File, error: Error) => void
-    },
-  ) {
-    await Promise.all(
-      uploadFiles.map(async (file) => {
-        const id = new ObjectId().toHexString()
+  function handleFilesAccepted(acceptedFiles: File[]) {
+    const newPending = acceptedFiles.map((file) => ({
+      id: new ObjectId().toHexString(),
+      file,
+      status: 'pending' as const,
+    }))
+    setPendingFiles((prev) => [...prev, ...newPending])
+  }
 
-        // Add temp card immediately with same ID that will be used server-side
-        setCurrentFiles((prev) => [
-          ...prev,
-          {
-            id,
-            filename: file.name,
-            filesize: file.size,
-            status: 'pending',
-            createdAt: '',
-            updatedAt: '',
-            user: '',
-          },
-        ])
+  function removePendingFile(id: string) {
+    setPendingFiles((prev) => prev.filter((f) => f.id !== id))
+  }
 
+  function clearPendingFiles() {
+    setPendingFiles([])
+  }
+
+  async function handleUpload() {
+    if (pendingFiles.length === 0 || isUploading) return
+
+    setIsUploading(true)
+
+    // Mark all as uploading
+    setPendingFiles((prev) => prev.map((f) => ({ ...f, status: 'uploading' as const })))
+
+    const results = await Promise.allSettled(
+      pendingFiles.map(async (pending) => {
         const formData = new FormData()
-        formData.append('id', id)
-        formData.append('file', file)
+        formData.append('id', pending.id)
+        formData.append('file', pending.file)
         formData.append('createdAt', Date.now().toString())
 
         const result = await uploadFile(formData)
 
-        if (result.success) {
-          onSuccess(file)
-          router.refresh()
-        } else {
-          // Remove temp card on error
-          setCurrentFiles((prev) => prev.filter((f) => f.id !== id))
-          onError(file, new Error(result.error || 'Upload failed'))
+        if (!result.success) {
+          throw new Error(result.error || 'Upload failed')
         }
+
+        return pending.id
       }),
     )
 
+    // Process results - remove successful, mark errors
+    const successIds = new Set<string>()
+    const errors = new Map<string, string>()
+
+    results.forEach((result, index) => {
+      const pending = pendingFiles[index]
+      if (result.status === 'fulfilled') {
+        successIds.add(pending.id)
+      } else {
+        errors.set(pending.id, result.reason?.message || 'Upload failed')
+      }
+    })
+
+    setPendingFiles((prev) =>
+      prev
+        .filter((f) => !successIds.has(f.id))
+        .map((f) =>
+          errors.has(f.id) ? { ...f, status: 'error' as const, error: errors.get(f.id) } : f,
+        ),
+    )
+
+    setIsUploading(false)
     router.refresh()
   }
 
@@ -114,7 +140,6 @@ export function FilesPage({ files = [] }: FilesPageProps) {
     }
   }
 
-  // Filter out uploading files that already exist in server data
   return (
     <div className="container mx-auto max-w-5xl py-8">
       <div className="mb-8">
@@ -122,23 +147,94 @@ export function FilesPage({ files = [] }: FilesPageProps) {
         <p className="text-muted-foreground">Upload and manage your documents</p>
       </div>
 
-      <div className="mb-8">
-        <FileUpload onUpload={handleUpload} accept={ACCEPTED_FILE_TYPES} multiple>
+      {/* Dropzone */}
+      <div className="mb-6">
+        <FileUpload onAccept={handleFilesAccepted} accept={ACCEPTED_FILE_TYPES} multiple>
           <FileUploadDropzone className="min-h-[120px]">
             <Upload className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Drop files here or click to upload</p>
+            <p className="text-sm text-muted-foreground">Drop files here or click to select</p>
             <p className="text-xs text-muted-foreground">Supports {ACCEPTED_FILE_TYPES_DISPLAY}</p>
           </FileUploadDropzone>
         </FileUpload>
       </div>
 
-      {currentFiles.length === 0 ? (
+      {/* Pending files list */}
+      {pendingFiles.length > 0 && (
+        <div className="mb-8 rounded-lg border bg-card p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-medium">
+              {pendingFiles.length} file{pendingFiles.length !== 1 ? 's' : ''} selected
+            </h2>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={clearPendingFiles} disabled={isUploading}>
+                <Trash2 className="mr-1 h-4 w-4" />
+                Clear
+              </Button>
+              <Button size="sm" onClick={handleUpload} disabled={isUploading}>
+                {isUploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {pendingFiles.map((pending) => (
+              <div
+                key={pending.id}
+                className="flex items-center gap-3 rounded-md border bg-background p-3"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{pending.file.name}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {pending.status === 'uploading' ? (
+                      <span className="flex items-center gap-1 text-blue-500">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Uploading
+                      </span>
+                    ) : pending.status === 'error' ? (
+                      <span className="flex items-center gap-1 text-red-500">
+                        <AlertCircle className="h-3 w-3" />
+                        {pending.error || 'Failed'}
+                      </span>
+                    ) : (
+                      <span>{formatFileSize(pending.file.size)}</span>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => removePendingFile(pending.id)}
+                  disabled={isUploading}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Uploaded files grid */}
+      {currentFiles.length === 0 && pendingFiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">No files uploaded yet</p>
           <p className="text-sm text-muted-foreground">Upload documents to chat with them</p>
         </div>
-      ) : (
+      ) : currentFiles.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {currentFiles.map((file) => (
             <Card key={file.id} className="group relative">
@@ -175,7 +271,7 @@ export function FilesPage({ files = [] }: FilesPageProps) {
             </Card>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
