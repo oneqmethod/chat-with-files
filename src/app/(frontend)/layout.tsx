@@ -19,8 +19,8 @@ const mono = JetBrains_Mono({
 })
 
 export const metadata = {
-  description: 'A blank template using Payload in a Next.js app.',
-  title: 'Payload Blank Template',
+  description: 'Upload files and start exploring them using AI Chat.',
+  title: 'Chat with you Files',
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {

@@ -87,7 +87,7 @@ async function listFiles(storeId: string): Promise<void> {
 
 async function deleteFile(docId: string): Promise<void> {
   const ai = getClient()
-  await ai.fileSearchStores.documents.delete({ name: docId, config: { force: true} })
+  await ai.fileSearchStores.documents.delete({ name: docId, config: { force: true } })
   console.log(`Deleted document: ${docId}`)
 }
 
