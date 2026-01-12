@@ -30,6 +30,7 @@ export const Messages: CollectionConfig = {
       name: 'content',
       type: 'textarea',
       required: true,
+      maxLength: 1_000_000,
     },
     {
       name: 'sources',
