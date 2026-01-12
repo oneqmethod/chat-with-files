@@ -104,8 +104,7 @@
   },
   "enabledPlugins": {
     "payload@payload-marketplace": true,
-    "shadcn@oneq-skills": true,
-    "nextjs@oneq-skills": true,
-    "code-simplifier@claude-plugins-official": true
+    "agent-browser@oneq-skills": true,
+    "mcp-cli@oneq-skills": true
   }
 }
