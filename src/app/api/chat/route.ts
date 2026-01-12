@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
     ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
     .map((p) => p.text)
     .join('\n')
+    .trim()
 
   if (lastUserText) {
     await payload.create({
