@@ -188,3 +188,10 @@
     letter-spacing: var(--tracking-normal);
   }
 }
+
+/* Override Streamdown code block overflow to enable horizontal scroll */
+@layer components {
+  .overflow-hidden:has(> pre) {
+    overflow-x: auto;
+  }
+}

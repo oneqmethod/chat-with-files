@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   const modelMessages = await convertToModelMessages(messages)
 
   const result = streamText({
-    model: google('gemini-3-flash-preview'),
+    model: google('gemini-3-pro-preview'),
     system: `You are a helpful assistant that answers questions based on the user's uploaded files.
 Always use the file_search tool to find relevant information before answering.
 If you don't have enough information to answer the question, say "I don't know" and provide a source for your answer.
@@ -106,7 +106,7 @@ If the user didn't uploaded files answer "You need to upload files first".`,
 
       if (chat.title === 'New Chat' && messages.length <= 2 && lastUserText) {
         const { text: title } = await generateText({
-          model: google('gemini-2.5-flash'),
+          model: google('gemini-3-flash-preview'),
           prompt: `Generate a short (3-5 words) chat title for this conversation. Only output the title, nothing else.\n\nUser: ${lastUserText}`,
         })
 

@@ -122,9 +122,9 @@ export function ChatClient({ initialMessages, chatId, hasFiles }: ChatClientProp
   const isLoading = status === 'streaming' || status === 'submitted'
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <Conversation className="min-h-0">
-        <ConversationContent>
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+      <Conversation className="min-h-0 w-full overflow-hidden">
+        <ConversationContent className="w-full overflow-x-hidden">
           {messages.length === 0 ? (
             <ConversationEmptyState
               title="Start a conversation"
@@ -139,7 +139,9 @@ export function ChatClient({ initialMessages, chatId, hasFiles }: ChatClientProp
                 )
                 return (
                   <Message key={message.id} from={message.role}>
-                    <MessageContent>
+                    <MessageContent
+                      className={message.role === 'assistant' ? 'w-full overflow-x-auto' : ''}
+                    >
                       {message.parts?.map((part, i) => {
                         const isLastMessage = message.id === messages[messages.length - 1]?.id
                         const isStreamingThis = isLoading && isLastMessage
