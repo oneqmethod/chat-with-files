@@ -4,7 +4,7 @@ import type { UIMessage } from '@ai-sdk/react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { useRouter } from 'next/navigation'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
 import {
   Conversation,
   ConversationContent,
@@ -28,43 +28,12 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input'
-import {
-  InlineCitation,
-  InlineCitationCard,
-  InlineCitationCardBody,
-  InlineCitationCardTrigger,
-  InlineCitationSource,
-} from '@/components/ai-elements/inline-citation'
-import { HoverCardTrigger } from '@/components/ui/hover-card'
-import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Loader } from '@/components/ai-elements/loader'
 import { FileWarning, MessageSquare } from 'lucide-react'
-
-type SourceUrlPart = {
-  type: 'source-url'
-  sourceId: string
-  url: string
-  title?: string
-}
-
-type SourceDocumentPart = {
-  type: 'source-document'
-  sourceId: string
-  mediaType: string
-  title: string
-  filename?: string
-}
-
-type SourcePart = SourceUrlPart | SourceDocumentPart
-
-type ReasoningPart = {
-  type: 'reasoning'
-  text: string
-}
+import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 
 interface ChatClientProps {
   initialMessages: UIMessage[]
@@ -77,7 +46,6 @@ export function ChatClient({ initialMessages, chatId, hasFiles }: ChatClientProp
   const [inputValue, setInputValue] = useState('')
   const [actualChatId, setActualChatId] = useState<string | null>(chatId)
   const isNewChat = actualChatId === null
-  const initializedRef = useRef(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const transport = useMemo(
@@ -119,8 +87,6 @@ export function ChatClient({ initialMessages, chatId, hasFiles }: ChatClientProp
     [sendMessage],
   )
 
-  const isLoading = status === 'streaming' || status === 'submitted'
-
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
       <Conversation className="min-h-0 w-full overflow-hidden">
@@ -134,85 +100,42 @@ export function ChatClient({ initialMessages, chatId, hasFiles }: ChatClientProp
           ) : (
             <>
               {messages.map((message) => {
-                const sources = message.parts?.filter(
-                  (p): p is SourcePart => p.type === 'source-url' || p.type === 'source-document',
-                )
                 return (
-                  <Message key={message.id} from={message.role}>
-                    <MessageContent
-                      className={message.role === 'assistant' ? 'w-full overflow-x-auto' : ''}
-                    >
-                      {message.parts?.map((part, i) => {
-                        const isLastMessage = message.id === messages[messages.length - 1]?.id
-                        const isStreamingThis = isLoading && isLastMessage
+                  <Fragment key={message.id}>
+                    {message.parts?.map((part, index) => {
+                      if (part.type === 'text') {
+                        return (
+                          <Message key={`${message.id}-${index}`} from={message.role}>
+                            <MessageContent>
+                              <MessageResponse>{part.text}</MessageResponse>
+                            </MessageContent>
+                          </Message>
+                        )
+                      }
 
-                        if (part.type === 'reasoning') {
-                          const reasoningPart = part as ReasoningPart
-                          return (
-                            <Reasoning
-                              key={i}
-                              className="w-full"
-                              isStreaming={isStreamingThis && i === message.parts!.length - 1}
-                            >
-                              <ReasoningTrigger />
-                              <ReasoningContent>{reasoningPart.text}</ReasoningContent>
-                            </Reasoning>
-                          )
-                        }
+                      if (part.type === 'reasoning') {
+                        return (
+                          <Reasoning
+                            key={`${message.id}-reasoning-${index}`}
+                            className="w-full"
+                            isStreaming={
+                              status === 'streaming' &&
+                              index === message.parts.length - 1 &&
+                              message.id === messages.at(-1)?.id
+                            }
+                          >
+                            <ReasoningTrigger />
+                            <ReasoningContent>{part.text}</ReasoningContent>
+                          </Reasoning>
+                        )
+                      }
 
-                        if (part.type === 'text') {
-                          return part.text || isStreamingThis ? (
-                            <MessageResponse key={i}>{part.text}</MessageResponse>
-                          ) : (
-                            <Loader key={i} />
-                          )
-                        }
-
-                        return null
-                      })}
-                      {sources && sources.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1">
-                          {sources.map((source, i) => (
-                            <InlineCitation key={source.sourceId || i}>
-                              <InlineCitationCard>
-                                {source.type === 'source-url' ? (
-                                  <>
-                                    <InlineCitationCardTrigger sources={[source.url]} />
-                                    <InlineCitationCardBody>
-                                      <div className="p-3">
-                                        <InlineCitationSource
-                                          title={source.title}
-                                          url={source.url}
-                                        />
-                                      </div>
-                                    </InlineCitationCardBody>
-                                  </>
-                                ) : (
-                                  <>
-                                    <HoverCardTrigger asChild>
-                                      <Badge className="ml-1 rounded-full" variant="secondary">
-                                        {source.filename || source.title}
-                                      </Badge>
-                                    </HoverCardTrigger>
-                                    <InlineCitationCardBody>
-                                      <div className="p-3">
-                                        <InlineCitationSource
-                                          title={source.title}
-                                          description={source.filename}
-                                        />
-                                      </div>
-                                    </InlineCitationCardBody>
-                                  </>
-                                )}
-                              </InlineCitationCard>
-                            </InlineCitation>
-                          ))}
-                        </div>
-                      )}
-                    </MessageContent>
-                  </Message>
+                      return <pre>{JSON.stringify(part, null, 2)}</pre>
+                    })}
+                  </Fragment>
                 )
               })}
+
               {status === 'submitted' && (
                 <Message from="assistant">
                   <MessageContent>
