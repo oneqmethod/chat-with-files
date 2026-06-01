@@ -130,7 +130,11 @@ export function ChatClient({ initialMessages, chatId, hasFiles }: ChatClientProp
                         )
                       }
 
-                      return <pre>{JSON.stringify(part, null, 2)}</pre>
+                      return (
+                        <pre key={`${message.id}-part-${index}`}>
+                          {JSON.stringify(part, null, 2)}
+                        </pre>
+                      )
                     })}
                   </Fragment>
                 )
